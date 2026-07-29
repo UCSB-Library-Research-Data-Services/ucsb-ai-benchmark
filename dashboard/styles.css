@@ -1,0 +1,406 @@
+/* ============================================================
+   UCSB AI Benchmark Dashboard — Custom Dark Theme
+   Base: Quarto darkly (Bootstrap 5 dark)
+   ============================================================ */
+
+/* --- Colour palette --- */
+:root {
+  --ucsb-navy:       #003660;
+  --ucsb-gold:       #FEBC11;
+  --ucsb-gold-dim:   #c9950e;
+  --accent-blue:     #58a6ff;
+  --accent-cyan:     #39d0d8;
+  --accent-purple:   #bc8cff;
+  --accent-green:    #3fb950;
+  --accent-red:      #f85149;
+  --accent-orange:   #d29922;
+
+  --bg-primary:      #0d1117;
+  --bg-secondary:    #161b22;
+  --bg-card:         #1c2128;
+  --bg-card-hover:   #22272e;
+  --border-subtle:   #30363d;
+  --text-primary:    #e6edf3;
+  --text-secondary:  #8b949e;
+  --text-muted:      #6e7681;
+}
+
+/* --- Page background & body --- */
+body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+               Helvetica, Arial, sans-serif;
+}
+
+/* --- Navbar --- */
+.navbar {
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--ucsb-gold) !important;
+  letter-spacing: 0.02em;
+}
+
+.navbar-nav .nav-link {
+  color: var(--text-secondary) !important;
+  font-size: 0.9rem;
+  transition: color 0.15s;
+}
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+  color: var(--text-primary) !important;
+}
+
+/* --- Page content container --- */
+#quarto-content {
+  background-color: var(--bg-primary);
+}
+
+.page-columns .column-screen-inset,
+.page-full {
+  padding: 0 !important;
+}
+
+main.content {
+  padding: 2rem 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* --- Hero section --- */
+.hero-section {
+  padding: 3.5rem 0 2.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 2.5rem;
+}
+
+.hero-section h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+}
+
+.hero-section .lead {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 700px;
+  line-height: 1.6;
+}
+
+/* --- Stat cards --- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.stat-card:hover {
+  border-color: var(--accent-blue);
+  background: var(--bg-card-hover);
+}
+
+.stat-card .stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--ucsb-gold);
+  line-height: 1.1;
+  display: block;
+}
+
+.stat-card .stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 0.3rem;
+  display: block;
+}
+
+/* --- Service / infrastructure cards --- */
+.infra-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin: 2rem 0;
+}
+
+.infra-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.infra-card:hover { border-color: var(--accent-blue); }
+
+.infra-card.grit   { border-top: 3px solid #58a6ff; }
+.infra-card.cit    { border-top: 3px solid #3fb950; }
+.infra-card.aicommons { border-top: 3px solid #bc8cff; }
+
+.infra-card h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.infra-card .infra-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+
+.badge-onprem {
+  background: rgba(88,166,255,0.12);
+  color: #58a6ff;
+  border: 1px solid rgba(88,166,255,0.3);
+}
+
+.badge-cloud {
+  background: rgba(188,140,255,0.12);
+  color: #bc8cff;
+  border: 1px solid rgba(188,140,255,0.3);
+}
+
+.infra-card .infra-url {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  margin-bottom: 0.75rem;
+  word-break: break-all;
+}
+
+.infra-card .infra-desc {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.infra-card .infra-models-count {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.infra-card .infra-models-count strong {
+  color: var(--ucsb-gold);
+}
+
+/* --- Section headings --- */
+.section-heading {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 2.5rem 0 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section-subheading {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  margin-top: 0.3rem;
+}
+
+/* --- DreamLab acknowledgement callout --- */
+.dreamlab-callout {
+  background: rgba(254, 188, 17, 0.05);
+  border: 1px solid rgba(254, 188, 17, 0.3);
+  border-left: 4px solid var(--ucsb-gold);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+}
+
+.dreamlab-callout h4 {
+  color: var(--ucsb-gold);
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dreamlab-callout p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* --- OJS chart wrappers --- */
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.chart-card h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.3rem;
+}
+
+.chart-card .chart-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.2rem;
+}
+
+/* --- Tables --- */
+.gt_table, table {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+table thead th {
+  background: var(--bg-secondary) !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  padding: 0.65rem 0.9rem !important;
+}
+
+table tbody td {
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  padding: 0.6rem 0.9rem !important;
+}
+
+table tbody tr:hover td {
+  background: var(--bg-card-hover) !important;
+}
+
+/* --- Score badge colours --- */
+.score-5 { color: #3fb950; font-weight: 700; }
+.score-4 { color: #79c0ff; font-weight: 600; }
+.score-3 { color: #d29922; }
+.score-2 { color: #f0883e; }
+.score-1 { color: #f85149; }
+
+/* --- Service colour badges --- */
+.badge-grit      { background: rgba(88,166,255,0.15); color: #58a6ff;  border: 1px solid rgba(88,166,255,0.35); }
+.badge-cit       { background: rgba(63,185,80,0.15);  color: #3fb950;  border: 1px solid rgba(63,185,80,0.35); }
+.badge-aicommons { background: rgba(188,140,255,0.15);color: #bc8cff;  border: 1px solid rgba(188,140,255,0.35); }
+
+.service-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* --- Controls (OJS selects/inputs) --- */
+.ojs-control-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.3rem;
+}
+
+/* force Observable inputs to dark style */
+form input, form select, .observablehq input, .observablehq select {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 6px !important;
+  padding: 0.4rem 0.7rem !important;
+  font-size: 0.9rem !important;
+}
+
+/* --- Tabs --- */
+.nav-tabs {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nav-tabs .nav-link {
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0.5rem 1rem;
+  font-size: 0.88rem;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--text-primary) !important;
+  border-bottom: 2px solid var(--accent-blue) !important;
+  background: transparent !important;
+}
+
+/* --- Info / method boxes --- */
+.method-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.25rem 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.method-box strong { color: var(--text-primary); }
+.method-box code {
+  background: rgba(255,255,255,0.06);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: #79c0ff;
+}
+
+/* --- Heatmap legend --- */
+.legend-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
+
+/* --- Footer --- */
+.nav-footer {
+  border-top: 1px solid var(--border-subtle) !important;
+  font-size: 0.82rem;
+}
+
+/* --- Responsive tweaks --- */
+@media (max-width: 768px) {
+  .hero-section h1 { font-size: 1.8rem; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .infra-grid { grid-template-columns: 1fr; }
+}
