@@ -1,0 +1,156 @@
+[
+  {
+    "family": "Gemma 4 \u00b7 27B",
+    "services": {
+      "grit": "gemma4:31b",
+      "CIT": "gemma-4-31b"
+    },
+    "service_list": [
+      "CIT",
+      "grit"
+    ]
+  },
+  {
+    "family": "Qwen3-Coder-Next",
+    "services": {
+      "grit": "qwen3-coder-next:latest",
+      "CIT": "Qwen3-Coder-Next"
+    },
+    "service_list": [
+      "CIT",
+      "grit"
+    ]
+  },
+  {
+    "family": "GPT-OSS",
+    "services": {
+      "grit": "gpt-oss:20b",
+      "CIT": "gpt-oss-120b"
+    },
+    "service_list": [
+      "CIT",
+      "grit"
+    ]
+  },
+  {
+    "family": "Qwen3 / Qwen3.5",
+    "services": {
+      "grit": "qwen3.5:latest",
+      "CIT": "qwen3.6-35b-a3b"
+    },
+    "service_list": [
+      "CIT",
+      "grit"
+    ]
+  },
+  {
+    "family": "Qwen3 (base)",
+    "services": {
+      "grit": "qwen3:latest"
+    },
+    "service_list": [
+      "grit"
+    ]
+  },
+  {
+    "family": "Qwen3-Coder",
+    "services": {
+      "grit": "qwen3-coder:latest"
+    },
+    "service_list": [
+      "grit"
+    ]
+  },
+  {
+    "family": "Mistral",
+    "services": {
+      "grit": "mistral:latest",
+      "CIT": "mistral-small-4-119b-2603"
+    },
+    "service_list": [
+      "CIT",
+      "grit"
+    ]
+  },
+  {
+    "family": "LLaMA 3.1 \u00b7 8B",
+    "services": {
+      "grit": "llama3.1:8b"
+    },
+    "service_list": [
+      "grit"
+    ]
+  },
+  {
+    "family": "LLaMA 3",
+    "services": {
+      "grit": "llama3:latest"
+    },
+    "service_list": [
+      "grit"
+    ]
+  },
+  {
+    "family": "LLaVA \u00b7 7B",
+    "services": {
+      "grit": "llava:7b"
+    },
+    "service_list": [
+      "grit"
+    ]
+  },
+  {
+    "family": "Phi-4",
+    "services": {
+      "grit": "phi4:latest"
+    },
+    "service_list": [
+      "grit"
+    ]
+  },
+  {
+    "family": "Gemma 3",
+    "services": {
+      "grit": "gemma3:latest"
+    },
+    "service_list": [
+      "grit"
+    ]
+  },
+  {
+    "family": "DeepSeek-R1",
+    "services": {
+      "grit": "deepseek-r1:latest"
+    },
+    "service_list": [
+      "grit"
+    ]
+  },
+  {
+    "family": "All-The-Things",
+    "services": {
+      "grit": "all-the-things"
+    },
+    "service_list": [
+      "grit"
+    ]
+  },
+  {
+    "family": "Granite 4.1 \u00b7 30B",
+    "services": {
+      "CIT": "granite-4.1-30b"
+    },
+    "service_list": [
+      "CIT"
+    ]
+  },
+  {
+    "family": "GPT-4o",
+    "services": {
+      "aicommons": "gpt-4o"
+    },
+    "service_list": [
+      "aicommons"
+    ]
+  }
+]

@@ -1,0 +1,479 @@
+---
+title: "UCSB AI Services Benchmark"
+format:
+  html:
+    page-layout: full
+---
+
+```{=html}
+<div class="hero-section">
+  <h1>UCSB AI Services<br>Benchmark Dashboard</h1>
+  <p class="lead">
+    A systematic evaluation of large language models available through UCSB-managed AI infrastructure —
+    comparing performance, speed, and capability across on-premise and cloud-hosted services.
+  </p>
+</div>
+```
+
+```{ojs}
+//| output: false
+// Load all data once here; other sections reference these
+summary  = FileAttachment("data/results_summary.csv").csv({ typed: true })
+lb       = FileAttachment("data/leaderboard.json").json()
+families = FileAttachment("data/model_families.json").json()
+```
+
+```{ojs}
+//| output: false
+// Derived counts for stat cards
+n_models    = new Set(lb.map(d => d.model)).size
+n_services  = new Set(lb.map(d => d.service)).size
+n_tests     = 12 + 12 + 6   // v1 + v2 + multimodal
+n_evals     = 345            // total log entries (non dream-lab)
+```
+
+```{=html}
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="stat-number" id="n-models">—</span>
+    <span class="stat-label">Models Evaluated</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">3</span>
+    <span class="stat-label">AI Services</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">30</span>
+    <span class="stat-label">Benchmark Tasks</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">6</span>
+    <span class="stat-label">Task Categories</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">345</span>
+    <span class="stat-label">Total Evaluations</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">2</span>
+    <span class="stat-label">LLM Judges Used</span>
+  </div>
+</div>
+
+<script>
+// Fill the dynamic model count once OJS resolves
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const el = document.getElementById('n-models');
+    if (el) el.textContent = "21";
+  }, 200);
+});
+</script>
+```
+
+---
+
+## Infrastructure
+
+```{=html}
+<p class="section-subheading">
+  Three UCSB-managed services were benchmarked, spanning two infrastructure models:
+  on-premise Ollama clusters and cloud-hosted Amazon Bedrock.
+</p>
+
+<div class="infra-grid">
+
+  <div class="infra-card grit">
+    <h3>GRIT</h3>
+    <span class="infra-badge badge-onprem">🖥️ On-premise · Ollama</span>
+    <div class="infra-url">llm.grit.ucsb.edu</div>
+    <div class="infra-desc">
+      UCSB's General Research IT cluster. Models are served locally via Ollama on
+      UCSB-managed hardware. Largest model catalog — 14 models evaluated including
+      vision-capable models.
+    </div>
+    <div class="infra-models-count"><strong>14</strong> models evaluated &nbsp;·&nbsp; Budget: 10M tokens/month</div>
+  </div>
+
+  <div class="infra-card cit">
+    <h3>CIT</h3>
+    <span class="infra-badge badge-onprem">🖥️ On-premise · Ollama</span>
+    <div class="infra-url">api.ai.college.ucsb.edu</div>
+    <div class="infra-desc">
+      College of Information Technology servers. Also Ollama-based, but shows notably
+      higher throughput than GRIT for the same models — reflecting different hardware capacity.
+      6 models evaluated.
+    </div>
+    <div class="infra-models-count"><strong>6</strong> models evaluated &nbsp;·&nbsp; Budget: 10M tokens/month</div>
+  </div>
+
+  <div class="infra-card aicommons">
+    <h3>AICommons</h3>
+    <span class="infra-badge badge-cloud">☁️ Cloud · Amazon Bedrock</span>
+    <div class="infra-url">zkh52rh785.execute-api.us-east-1.amazonaws.com</div>
+    <div class="infra-desc">
+      AWS-hosted API with a diverse catalog including Claude, GPT-4o, Amazon Nova, and
+      Llama 4. Currently 1 model evaluated (gpt-4o). Additional evaluations planned.
+    </div>
+    <div class="infra-models-count"><strong>1</strong> model evaluated &nbsp;·&nbsp; Budget: 900K tokens/month</div>
+  </div>
+
+</div>
+```
+
+---
+
+## Service × Model × Benchmark Intersection
+
+```{=html}
+<p class="section-subheading">
+  Which models appear on which services, and which benchmark categories each model was tested on.
+  Models that appear on more than one service are highlighted — enabling direct cross-service performance comparisons.
+</p>
+<div class="chart-card">
+  <h4>Model Availability Matrix</h4>
+  <div class="chart-subtitle">Each row is a model family. Filled cells indicate the model was evaluated on that service for that category. Models shared across services are shown with a ★ indicator.</div>
+  <div id="intersection-chart"></div>
+</div>
+```
+
+```{ojs}
+//| output: false
+
+// Build intersection data from leaderboard + families
+services_order = ["grit", "CIT", "aicommons"]
+service_colors = ({
+  "grit":      "#58a6ff",
+  "CIT":       "#3fb950",
+  "aicommons": "#bc8cff"
+})
+service_labels = ({ "grit": "GRIT", "CIT": "CIT", "aicommons": "AICommons" })
+
+// Build a map: model → [services it appears on]
+model_service_map = {
+  const map = {};
+  for (const row of lb) {
+    if (!map[row.model]) map[row.model] = { model: row.model, services: [], infra: row.infra };
+    map[row.model].services.push(row.service);
+  }
+  return map;
+}
+
+// Enrich families with which services they appear on
+families_enriched = families.map(f => {
+  const svcs = Object.keys(f.services);
+  const shared = svcs.length > 1;
+  return { ...f, service_list: svcs, shared };
+})
+
+// Categories present in summary data
+cats_all = ["code_generation","metadata_generation","literature_synthesis",
+            "data_interpretation","ocr","document_extraction","vision_qa"]
+cat_labels_map = ({
+  "code_generation":     "Code Gen",
+  "metadata_generation": "Metadata Gen",
+  "literature_synthesis":"Lit. Synthesis",
+  "data_interpretation": "Data Interp.",
+  "ocr":                 "OCR",
+  "document_extraction": "Doc Extract.",
+  "vision_qa":           "Vision QA"
+})
+
+// Build lookup: service+model → set of categories tested
+svc_model_cats = {
+  const map = {};
+  for (const row of summary) {
+    const k = row.service + "|||" + row.model;
+    if (!map[k]) map[k] = new Set();
+    map[k].add(row.category);
+  }
+  return map;
+}
+```
+
+```{ojs}
+{
+  // ── Dimensions ──────────────────────────────────────────────────────────
+  const cellSize  = 22;
+  const cellGap   = 3;
+  const rowH      = cellSize + cellGap + 10;
+  const leftPad   = 185;          // space for family name
+  const topPad    = 90;
+  const svcGap    = 18;           // gap between service groups
+  const catCols   = cats_all.length;
+
+  // Column layout: for each service, catCols category columns
+  // services in order: grit, CIT, aicommons
+  const svcsOrdered = ["grit","CIT","aicommons"];
+  const svcCols     = svcsOrdered.length;
+
+  // Total width
+  const groupW  = catCols * (cellSize + cellGap);
+  const totalW  = leftPad + svcCols * groupW + (svcCols - 1) * svcGap + 40;
+  const totalH  = topPad + families_enriched.length * rowH + 30;
+
+  const svg = d3.create("svg")
+    .attr("width",  totalW)
+    .attr("height", totalH)
+    .style("font-family", "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif")
+    .style("background", "transparent");
+
+  // ── Service group headers ────────────────────────────────────────────────
+  svcsOrdered.forEach((svc, si) => {
+    const gx = leftPad + si * (groupW + svcGap);
+    const midX = gx + groupW / 2;
+
+    // Service label
+    svg.append("text")
+      .attr("x", midX).attr("y", 18)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 13).attr("font-weight", 700)
+      .attr("fill", service_colors[svc])
+      .text(service_labels[svc]);
+
+    // Infra badge text
+    const infraText = svc === "aicommons" ? "☁ Amazon Bedrock" : "🖥 Ollama";
+    svg.append("text")
+      .attr("x", midX).attr("y", 33)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 9.5).attr("fill", "#8b949e")
+      .text(infraText);
+
+    // Category column headers (rotated)
+    cats_all.forEach((cat, ci) => {
+      const cx = gx + ci * (cellSize + cellGap) + cellSize / 2;
+      svg.append("text")
+        .attr("transform", `translate(${cx},${topPad - 6}) rotate(-45)`)
+        .attr("text-anchor", "start")
+        .attr("font-size", 9.5)
+        .attr("fill", "#8b949e")
+        .text(cat_labels_map[cat]);
+    });
+
+    // Vertical divider between service groups
+    if (si > 0) {
+      svg.append("line")
+        .attr("x1", gx - svcGap / 2).attr("y1", 0)
+        .attr("x2", gx - svcGap / 2).attr("y2", totalH)
+        .attr("stroke", "#30363d").attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
+    }
+  });
+
+  // ── Model rows ───────────────────────────────────────────────────────────
+  families_enriched.forEach((fam, fi) => {
+    const ry = topPad + fi * rowH;
+
+    // Alternating row background
+    if (fi % 2 === 0) {
+      svg.append("rect")
+        .attr("x", 0).attr("y", ry - 2)
+        .attr("width", totalW).attr("height", rowH)
+        .attr("fill", "rgba(255,255,255,0.015)").attr("rx", 2);
+    }
+
+    // Family name
+    const isShared = fam.service_list.length > 1;
+    svg.append("text")
+      .attr("x", leftPad - 10).attr("y", ry + cellSize / 2 + 4)
+      .attr("text-anchor", "end")
+      .attr("font-size", 11.5)
+      .attr("font-weight", isShared ? 700 : 400)
+      .attr("fill", isShared ? "#e6edf3" : "#8b949e")
+      .text((isShared ? "★ " : "") + fam.family);
+
+    // Cells
+    svcsOrdered.forEach((svc, si) => {
+      const gx = leftPad + si * (groupW + svcGap);
+      const modelId = fam.services[svc];  // e.g. "gemma4:31b" or undefined
+
+      cats_all.forEach((cat, ci) => {
+        const cx = gx + ci * (cellSize + cellGap);
+        let fill = "#1c2128";   // empty
+        let opacity = 1;
+        let stroke = "#30363d";
+
+        if (modelId) {
+          const k = svc + "|||" + modelId;
+          const catsForModel = svc_model_cats[k];
+          if (catsForModel && catsForModel.has(cat)) {
+            fill    = service_colors[svc];
+            opacity = 0.85;
+            stroke  = "none";
+          } else if (catsForModel) {
+            // model exists on service but wasn't tested on this category
+            fill    = "rgba(255,255,255,0.04)";
+            stroke  = "#30363d";
+          }
+          // else: model not on this service → stays empty
+        }
+
+        svg.append("rect")
+          .attr("x", cx).attr("y", ry)
+          .attr("width", cellSize).attr("height", cellSize)
+          .attr("rx", 3)
+          .attr("fill", fill)
+          .attr("opacity", opacity)
+          .attr("stroke", stroke)
+          .attr("stroke-width", 0.5);
+      });
+    });
+  });
+
+  // ── Legend ───────────────────────────────────────────────────────────────
+  const ly = totalH - 22;
+  const legendItems = [
+    { color: "#58a6ff", label: "GRIT" },
+    { color: "#3fb950", label: "CIT" },
+    { color: "#bc8cff", label: "AICommons" },
+    { color: "rgba(255,255,255,0.04)", label: "Not tested (model available)", stroke: "#30363d" },
+    { color: "#1c2128", label: "Model not on service", stroke: "#30363d" },
+  ];
+  let lx = leftPad;
+  legendItems.forEach(item => {
+    svg.append("rect")
+      .attr("x", lx).attr("y", ly)
+      .attr("width", 11).attr("height", 11).attr("rx", 2)
+      .attr("fill", item.color)
+      .attr("stroke", item.stroke || "none").attr("stroke-width", 0.5);
+    svg.append("text")
+      .attr("x", lx + 14).attr("y", ly + 9.5)
+      .attr("font-size", 9.5).attr("fill", "#8b949e")
+      .text(item.label);
+    lx += item.label.length * 6.5 + 22;
+  });
+
+  return svg.node();
+}
+```
+
+---
+
+## Overall Leaderboard
+
+```{=html}
+<p class="section-subheading">
+  All evaluated models ranked by overall average score (1–5 scale), then by throughput.
+  Literature Synthesis scores use Claude as the canonical judge.
+  Click column headers to sort.
+</p>
+<div class="chart-card" style="padding: 0.5rem;">
+  <div id="leaderboard-table"></div>
+</div>
+```
+
+```{ojs}
+//| output: false
+
+// Category short-names for table columns
+cat_cols = [
+  { key: "score_code_generation",     label: "Code Gen" },
+  { key: "score_metadata_generation", label: "Metadata" },
+  { key: "score_literature_synthesis",label: "Lit. Synth" },
+  { key: "score_data_interpretation", label: "Data Interp" },
+  { key: "score_ocr",                 label: "OCR" },
+  { key: "score_vision_qa",           label: "Vision QA" },
+]
+
+function scoreCell(v) {
+  if (v === null || v === undefined) return `<span style="color:#6e7681">—</span>`;
+  const cls = v >= 5 ? "score-5" : v >= 4 ? "score-4" : v >= 3 ? "score-3" : v >= 2 ? "score-2" : "score-1";
+  return `<span class="${cls}">${v.toFixed(2)}</span>`;
+}
+
+function svcBadge(svc) {
+  const cls = svc === "grit" ? "badge-grit" : svc === "CIT" ? "badge-cit" : "badge-aicommons";
+  const lbl = svc === "grit" ? "GRIT" : svc === "CIT" ? "CIT" : "AICommons";
+  return `<span class="service-badge ${cls}">${lbl}</span>`;
+}
+
+function infraTag(row) {
+  if (row.infra_type === "onprem")
+    return `<span style="font-size:0.72rem;color:#58a6ff">🖥 On-prem</span>`;
+  return `<span style="font-size:0.72rem;color:#bc8cff">☁ Bedrock</span>`;
+}
+```
+
+```{ojs}
+viewof sortCol = Inputs.select(
+  ["overall_score", "avg_tps", "avg_latency_sec",
+   "score_code_generation","score_metadata_generation",
+   "score_literature_synthesis","score_data_interpretation",
+   "score_ocr","score_vision_qa"],
+  { value: "overall_score",
+    label: "Sort by",
+    format: v => ({
+      overall_score: "Overall Score",
+      avg_tps: "Throughput (TPS)",
+      avg_latency_sec: "Latency (sec)",
+      score_code_generation: "Code Generation",
+      score_metadata_generation: "Metadata Generation",
+      score_literature_synthesis: "Literature Synthesis",
+      score_data_interpretation: "Data Interpretation",
+      score_ocr: "OCR",
+      score_vision_qa: "Vision QA"
+    })[v]
+  }
+)
+```
+
+```{ojs}
+{
+  const sorted = [...lb].sort((a, b) => {
+    const av = a[sortCol] ?? -1;
+    const bv = b[sortCol] ?? -1;
+    if (sortCol === "avg_latency_sec") return av - bv; // lower is better
+    return bv - av;
+  });
+
+  const rows = sorted.map((r, i) => `
+    <tr>
+      <td style="color:#8b949e;font-size:0.8rem">${i + 1}</td>
+      <td>${svcBadge(r.service)}</td>
+      <td style="font-size:0.85rem;color:#e6edf3;font-weight:500">${r.model}</td>
+      <td>${infraTag(r)}</td>
+      <td style="text-align:center"><strong style="color:#FEBC11">${r.overall_score.toFixed(2)}</strong></td>
+      ${cat_cols.map(c => `<td style="text-align:center">${scoreCell(r[c.key])}</td>`).join("")}
+      <td style="text-align:right;color:#8b949e;font-size:0.85rem">${r.avg_tps.toFixed(0)}</td>
+      <td style="text-align:right;color:#8b949e;font-size:0.85rem">${r.avg_latency_sec.toFixed(2)}s</td>
+    </tr>
+  `).join("");
+
+  const html = `
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Service</th>
+          <th>Model</th>
+          <th>Infra</th>
+          <th style="text-align:center">Overall</th>
+          ${cat_cols.map(c => `<th style="text-align:center">${c.label}</th>`).join("")}
+          <th style="text-align:right">TPS</th>
+          <th style="text-align:right">Latency</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  return html;
+}
+```
+
+---
+
+## Acknowledgements
+
+```{=html}
+<div class="dreamlab-callout">
+  <h4>🙏 DreamLab — Acknowledgement</h4>
+  <p>
+    The UCSB DreamLab (<strong>litellm.dreamlab.ucsb.edu</strong>) also participated in this evaluation project,
+    providing access to Google Gemini models (gemini-3.5-flash, gemini-3.6-flash, gemini-3.1-pro-preview,
+    and others) via a LiteLLM proxy. DreamLab models were used extensively as the default LLM judge
+    during iterative development of this benchmark suite.<br><br>
+    DreamLab results are <strong>not included in the comparative dashboard</strong> because DreamLab
+    cannot guarantee the continued availability of LLM inference services going forward.
+    We thank the DreamLab team for their support of this work and their contribution to
+    UCSB's AI research infrastructure.
+  </p>
+</div>
+```
