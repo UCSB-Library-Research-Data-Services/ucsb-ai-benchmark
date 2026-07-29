@@ -128,18 +128,6 @@ grit,llava:7b,ocr,programmatic,1,1.0,3.08,27.96,GRIT,On-premise · Ollama,onprem
 aicommons,gpt-4o,ocr,claude-v4.6-sonnet,1,3.0,2.02,16.3,AICommons,Cloud · Amazon Bedrock,cloud,OCR
 aicommons,gpt-4o,document_extraction,claude-v4.6-sonnet,1,2.0,2.9,42.09,AICommons,Cloud · Amazon Bedrock,cloud,Document Extraction
 aicommons,gpt-4o,vision_qa,claude-v4.6-sonnet,1,1.0,2.2,23.23,AICommons,Cloud · Amazon Bedrock,cloud,Vision QA
-aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,code_generation,programmatic,6,5.0,1.68,67.42,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
-aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,metadata_generation,programmatic,6,4.67,1.87,66.23,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
-aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,literature_synthesis,claude-v4.6-sonnet,3,4.33,4.76,75.45,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
-aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,data_interpretation,programmatic,6,5.0,1.28,0.79,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
-aicommons,01KSNH04J1E35CH4KJDD8GPQFM,code_generation,programmatic,6,5.0,2.27,43.5,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
-aicommons,01KSNH04J1E35CH4KJDD8GPQFM,metadata_generation,programmatic,6,4.5,2.9,52.45,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
-aicommons,01KSNH04J1E35CH4KJDD8GPQFM,literature_synthesis,claude-v4.6-sonnet,3,5.0,6.29,43.97,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
-aicommons,01KSNH04J1E35CH4KJDD8GPQFM,data_interpretation,programmatic,6,5.0,1.36,2.96,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
-aicommons,01KWZDN042XGHVSXPZKNWW0KY5,code_generation,programmatic,6,5.0,2.72,39.53,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
-aicommons,01KWZDN042XGHVSXPZKNWW0KY5,metadata_generation,programmatic,6,4.67,3.34,53.37,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
-aicommons,01KWZDN042XGHVSXPZKNWW0KY5,literature_synthesis,claude-v4.6-sonnet,3,5.0,11.31,41.28,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
-aicommons,01KWZDN042XGHVSXPZKNWW0KY5,data_interpretation,programmatic,6,5.0,1.33,3.03,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
 aicommons,amazon-nova-lite,code_generation,programmatic,6,5.0,1.07,101.65,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
 aicommons,amazon-nova-lite,metadata_generation,programmatic,6,4.67,1.01,91.63,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
 aicommons,amazon-nova-lite,literature_synthesis,claude-v4.6-sonnet,3,5.0,1.27,98.11,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
@@ -203,9 +191,6 @@ aicommons,gpt-4o,code_generation,programmatic,6,5.0,2.23,45.64,AICommons,Cloud �
 aicommons,gpt-4o,metadata_generation,programmatic,6,4.67,2.67,56.27,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
 aicommons,gpt-4o,literature_synthesis,claude-v4.6-sonnet,3,5.0,5.81,43.51,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
 aicommons,gpt-4o,data_interpretation,programmatic,6,5.0,1.33,3.01,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
-aicommons,01KWZDN042XGHVSXPZKNWW0KY5,literature_synthesis,claude-v4.6-opus,3,4.67,12.5,46.35,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
-aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,literature_synthesis,claude-v4.6-opus,3,5.0,2.4,74.9,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
-aicommons,01KSNH04J1E35CH4KJDD8GPQFM,literature_synthesis,claude-v4.6-opus,3,5.0,2.29,51.97,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
 aicommons,amazon-nova-lite,literature_synthesis,claude-v4.6-opus,3,5.0,1.03,96.94,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
 aicommons,amazon-nova-micro,literature_synthesis,claude-v4.6-opus,3,4.67,0.78,123.26,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
 aicommons,amazon-nova-pro,literature_synthesis,claude-v4.6-opus,3,5.0,1.0,97.09,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
