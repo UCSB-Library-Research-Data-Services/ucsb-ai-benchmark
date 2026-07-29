@@ -182,17 +182,6 @@ viewof heatmap_cat = Inputs.select(
       .attr("rx", 2).attr("fill", "#30363d");
   }
 
-  // Category labels above bands
-  const catGroups = {};
-  test_ids.forEach((tid,ti)=>{
-    const cat = rows.find(r=>r.test_id===tid)?.category||"";
-    if (!catGroups[cat]) catGroups[cat]={start:ti,end:ti};
-    else catGroups[cat].end = ti;
-  });
-  Object.entries(catGroups).forEach(([cat,[start,end]])=>{
-    // handled inline above; add text
-  });
-
   // Row headers + cells
   model_keys.forEach((mk, mi) => {
     const ry = labelH + mi * (cellH + cellGap);
