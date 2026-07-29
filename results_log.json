@@ -4,29 +4,55 @@
     "model": "gemma4:31b",
     "test_id": "code_gen_1",
     "category": "code_generation",
-    "latency_sec": 27.16,
-    "tps": 8.73,
+    "latency_sec": 42.69,
+    "tps": 5.48,
+    "prompt_tokens": 82,
+    "completion_tokens": 234,
     "score": 5,
-    "reason": "Execution successful"
+    "reason": "Execution successful with numeric output",
+    "model_output": "import pandas as pd\n\ndf = pd.read_csv('/var/folders/37/816y3tg93hn7pnnrd0c33c_00000gn/T/tmp5gqq9aia/data.csv')\nfiltered_df = df[df['temperature'] > 20]\nmean_pressure = filtered_df['pressure'].mean()\nprint(mean_pressure)",
+    "output_type": "code"
+  },
+  {
+    "service": "grit",
+    "model": "qwen3.5:latest",
+    "test_id": "code_gen_1",
+    "category": "code_generation",
+    "latency_sec": 45.12,
+    "tps": 14.03,
+    "prompt_tokens": 76,
+    "completion_tokens": 633,
+    "score": 5,
+    "reason": "Execution successful with numeric output",
+    "model_output": "import pandas as pd\n\ndf = pd.read_csv('/var/folders/37/816y3tg93hn7pnnrd0c33c_00000gn/T/tmpun1nq58c/data.csv')\nfiltered_df = df[df['temperature'] > 20]\nmean_pressure = filtered_df['pressure'].mean()\nprint(mean_pressure)",
+    "output_type": "code"
   },
   {
     "service": "CIT",
     "model": "gemma-4-31b",
     "test_id": "code_gen_1",
     "category": "code_generation",
-    "latency_sec": 0.08,
-    "tps": 695.48,
+    "latency_sec": 2.22,
+    "tps": 39.11,
+    "prompt_tokens": 80,
+    "completion_tokens": 87,
     "score": 5,
-    "reason": "Execution successful"
+    "reason": "Execution successful with numeric output",
+    "model_output": "import pandas as pd\n\n# Load the data\ndf = pd.read_csv('/var/folders/37/816y3tg93hn7pnnrd0c33c_00000gn/T/tmp5wfo6upj/data.csv')\n\n# Filter for temperature > 20\nfiltered_df = df[df['temperature'] > 20]\n\n# Calculate the mean of the pressure column\nmean_pressure = filtered_df['pressure'].mean()\n\n# Print the result\nprint(mean_pressure)",
+    "output_type": "code"
   },
   {
     "service": "CIT",
     "model": "mistral-small-4-119b-2603",
     "test_id": "code_gen_1",
     "category": "code_generation",
-    "latency_sec": 0.08,
-    "tps": 630.79,
+    "latency_sec": 0.59,
+    "tps": 82.48,
+    "prompt_tokens": 81,
+    "completion_tokens": 49,
     "score": 5,
-    "reason": "Execution successful"
+    "reason": "Execution successful with numeric output",
+    "model_output": "import pandas as pd\n\ndf = pd.read_csv('/var/folders/37/816y3tg93hn7pnnrd0c33c_00000gn/T/tmpng045o6x/data.csv')\nfiltered_df = df[df['temperature'] > 20]\nmean_pressure = filtered_df['pressure'].mean()\nprint(mean_pressure)",
+    "output_type": "code"
   }
 ]
