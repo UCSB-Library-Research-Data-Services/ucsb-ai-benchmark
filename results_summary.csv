@@ -79,5 +79,12 @@ CIT,gpt-oss-120b,code_generation,3,5.0,1.04,163.4
 CIT,gpt-oss-120b,metadata_generation,3,5.0,1.35,171.73
 CIT,gpt-oss-120b,literature_synthesis,3,5.0,1.35,170.46
 CIT,gpt-oss-120b,data_interpretation,3,5.0,0.65,148.26
-grit,llava:7b,ocr,1,1.0,14.65,16.11
-grit,llava:7b,vision_qa,1,1.0,0.92,27.19
+grit,llava:7b,ocr,2,3.0,7.7,42.59
+grit,llava:7b,vision_qa,3,1.0,0.97,73.24
+grit,phi4:latest,ocr,2,1.0,4.39,43.22
+grit,phi4:latest,document_extraction,1,2.0,2.08,57.23
+grit,phi4:latest,vision_qa,3,1.0,1.54,48.06
+grit,llava:7b,document_extraction,1,1.0,2.11,111.96
+grit,all-the-things,ocr,2,3.0,4.56,24.41
+grit,all-the-things,document_extraction,1,2.0,7.28,59.35
+grit,all-the-things,vision_qa,3,1.0,6.68,40.95
