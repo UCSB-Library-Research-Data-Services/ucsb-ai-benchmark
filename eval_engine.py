@@ -2,6 +2,9 @@ import json
 import time
 import logging
 import os
+import base64
+from io import BytesIO
+from PIL import Image
 from config import SERVICES
 from eval_config import TARGET_SERVICES, DEFAULT_JUDGE_SERVICE, DEFAULT_JUDGE_MODEL, SERVICE_BUDGETS, EXCLUDED_MODELS
 from eval_scorers import score_programmatic_code, score_programmatic_metadata, score_exact_match, score_with_judge
@@ -19,6 +22,29 @@ _MAX_RETRIES = 2
 # Base delay in seconds between retries (doubles each attempt).
 _RETRY_BASE_DELAY = 5
 
+def encode_image_to_base64(image_path: str, max_size: int = 1024) -> str:
+    """Reads an image, resizes it if it exceeds max_size, and encodes it to a base64 string.
+    This prevents '413 Request Entity Too Large' errors from API gateways."""
+    with Image.open(image_path) as img:
+        # Convert to RGB if it has an alpha channel (JPEG doesn't support alpha)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        
+        # Calculate aspect ratio
+        width, height = img.size
+        if width > max_size or height > max_size:
+            if width > height:
+                new_width = max_size
+                new_height = int(max_size * (height / width))
+            else:
+                new_height = max_size
+                new_width = int(max_size * (width / height))
+            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+        buffered = BytesIO()
+        # Save as high-quality JPEG to significantly reduce base64 size compared to PNG
+        img.save(buffered, format="JPEG", quality=85)
+        return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
 def get_client(service_name: str) -> OpenAI:
     config = SERVICES.get(service_name)
@@ -112,15 +138,15 @@ def run_evaluation(
 
     # 1. Load Dataset
     try:
-        with open("eval_dataset.json", "r") as f:
+        with open("eval_dataset_v2.json", "r") as f:
             dataset = json.load(f)
     except Exception as e:
         logging.error(f"Failed to load dataset: {e}")
         return
 
     if test_run:
-        dataset = dataset[:1]  # Just run the first test
-        logging.info("TEST RUN MODE: Only running 1 test case.")
+        dataset = dataset[-2:]  # Just run the last two tests (vision) for test mode
+        logging.info("TEST RUN MODE: Only running 2 test cases.")
 
     # 2. Initialize Judge Client
     logging.info(f"Initializing Judge Client: {judge_service} / {judge_model}")
@@ -165,6 +191,9 @@ def run_evaluation(
             logging.error(f"Failed to connect to {target_service_name}: {e}")
             continue
 
+        if test_run:
+            active_models = active_models[:2]
+
         # 5. Iterate Models & Prompts
         evaluated_count = 0
         for model_id in active_models:
@@ -191,10 +220,26 @@ def run_evaluation(
 
                 start_time = time.time()
                 try:
+                    # Construct message payload, handling multimodality if image_path is present
+                    if "image_path" in test_case and test_case["image_path"]:
+                        base64_img = encode_image_to_base64(test_case["image_path"])
+                        # We are converting everything to JPEG in the encoding function
+                        mime_type = "image/jpeg"
+                        
+                        message_content = [
+                            {"type": "text", "text": test_case['prompt']},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{mime_type};base64,{base64_img}"}
+                            }
+                        ]
+                    else:
+                        message_content = test_case['prompt']
+
                     response = _call_with_retry(
                         target_client,
                         model_id,
-                        [{"role": "user", "content": test_case['prompt']}]
+                        [{"role": "user", "content": message_content}]
                     )
                     latency = time.time() - start_time
 
@@ -215,9 +260,9 @@ def run_evaluation(
                         score_result = score_programmatic_code(target_text, include_output=include_model_output)
                     elif test_case['category'] == "metadata_generation":
                         score_result = score_programmatic_metadata(target_text, test_case['expected_schema_keys'], include_output=include_model_output)
-                    elif test_case['category'] == "data_interpretation":
+                    elif test_case['category'] in ["data_interpretation", "vision_qa"]:
                         score_result = score_exact_match(target_text, test_case['expected_exact_match'], include_output=include_model_output)
-                    elif test_case['category'] == "literature_synthesis":
+                    elif test_case['category'] in ["literature_synthesis", "ocr"]:
                         # Guard against judge service missing from SERVICE_BUDGETS
                         judge_budget = SERVICE_BUDGETS.get(judge_service, _DEFAULT_BUDGET)
                         if tracker.check_budget(judge_service, judge_budget):

@@ -22,9 +22,9 @@ The test cases (defined in `eval_dataset.json`) fall into four categories, each 
 3. **Literature Review & Synthesis:**
    - *Logic:* The model is asked to extract methodologies and conclusions from scientific abstracts.
    - *Score (LLM Judge):* A highly capable "Frontier" model (like Claude 4.6 or Gemini 3.5) acts as a Judge. It reads the target model's output and scores it 1-5 based on a strict rubric for accuracy and lack of hallucination.
-4. **Data Interpretation:**
-   - *Logic:* The model answers multiple-choice questions based on statistical summaries.
-   - *Score:* 5/5 for exact match, 1/5 for incorrect.
+5. **OCR & Multimodal Vision:**
+   - *Logic:* The model is passed an image encoded in base64 alongside a prompt asking it to transcribe an exact markdown table (`ocr`) or answer a specific visual question (`vision_qa`). Images are compressed automatically using Pillow to avoid `413 Request Entity Too Large` errors.
+   - *Score:* `ocr` is graded 1-5 by the Judge LLM against the ground truth. `vision_qa` is graded strictly via exact string matching.
 
 ### Token & Budget Management
 Because LLM-as-a-Judge can quickly consume API quotas (especially on `aicommons` which has a strict 1M tokens/month limit), the suite includes a `TokenTracker` (`token_tracker.py`). It tracks token usage from API responses and enforces hard monthly limits to prevent budget overruns.
@@ -35,8 +35,8 @@ Ensure you have `uv` and `python` installed.
 You must set up your API keys in a `.env` file (see `config.py` for required keys like `GRIT_KEY`, `CIT_KEY`, etc.).
 
 ```bash
-# Add necessary dependencies for programmatic code evaluation
-uv add pandas numpy
+# Add necessary dependencies for programmatic code evaluation and image processing
+uv add pandas numpy scikit-learn pillow
 ```
 
 ## How to Run
