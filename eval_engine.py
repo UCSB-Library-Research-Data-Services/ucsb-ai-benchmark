@@ -257,9 +257,19 @@ def run_evaluation(
                     score_result = {"score": 0, "reason": "Scorer not matched"}
 
                     if test_case['category'] == "code_generation":
-                        score_result = score_programmatic_code(target_text, include_output=include_model_output)
+                        score_result = score_programmatic_code(
+                            target_text,
+                            dummy_csv=test_case.get("dummy_csv", "temperature,pressure\n15,1000\n25,1010\n30,1020\n"),
+                            expected_output=test_case.get("expected_output"),
+                            include_output=include_model_output,
+                        )
                     elif test_case['category'] == "metadata_generation":
-                        score_result = score_programmatic_metadata(target_text, test_case['expected_schema_keys'], include_output=include_model_output)
+                        score_result = score_programmatic_metadata(
+                            target_text,
+                            test_case['expected_schema_keys'],
+                            expected_values=test_case.get("expected_values"),
+                            include_output=include_model_output,
+                        )
                     elif test_case['category'] in ["data_interpretation", "vision_qa"]:
                         score_result = score_exact_match(target_text, test_case['expected_exact_match'], include_output=include_model_output)
                     elif test_case['category'] in ["literature_synthesis", "ocr"]:
@@ -305,8 +315,9 @@ def run_evaluation(
                         log_entry["judge_rubric_feedback"] = score_result["judge_rubric_feedback"]
                     if "judge_model" in score_result:
                         log_entry["judge_model"] = score_result["judge_model"]
-                    if "code_output" in score_result:
-                        log_entry["code_output"] = score_result["code_output"]
+                    # code execution stdout (stored as 'output' in scorer result)
+                    if "output" in score_result:
+                        log_entry["code_output"] = score_result["output"]
 
                     # Append immediately (Phase 4.1: per-task durability)
                     _append_result(log_entry)

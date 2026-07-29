@@ -3,37 +3,69 @@
     "id": "code_gen_1",
     "category": "code_generation",
     "prompt": "Write a Python script using pandas to load 'data.csv', filter for rows where the column 'temperature' is greater than 20, and calculate the mean of the 'pressure' column for those rows. Print the result. Assume the CSV has headers. Output ONLY the python code inside a markdown code block, no explanations.",
-    "expected_behavior": "executes_cleanly"
+    "expected_behavior": "executes_cleanly",
+    "dummy_csv": "temperature,pressure\n15,1000\n25,1010\n30,1020\n",
+    "expected_output": [
+      {"value": 1015.0, "label": "mean pressure for rows where temperature > 20"}
+    ]
   },
   {
     "id": "code_gen_2",
     "category": "code_generation",
     "prompt": "Write a Python script using pandas to load 'data.csv' and compute the standard deviation of the 'pressure' column. Print the result rounded to 2 decimal places. Assume the CSV has headers 'temperature' and 'pressure'. Output ONLY the python code inside a markdown code block, no explanations.",
-    "expected_behavior": "executes_cleanly"
+    "expected_behavior": "executes_cleanly",
+    "dummy_csv": "temperature,pressure\n15,1000\n25,1010\n30,1020\n",
+    "expected_output": [
+      {"value": 10.0, "label": "standard deviation of pressure column rounded to 2dp"}
+    ]
   },
   {
     "id": "code_gen_3",
     "category": "code_generation",
     "prompt": "Write a Python script using pandas to load 'data.csv', group the rows by whether 'temperature' is above or below 20, and print the count of rows in each group. Assume the CSV has headers 'temperature' and 'pressure'. Output ONLY the python code inside a markdown code block, no explanations.",
-    "expected_behavior": "executes_cleanly"
+    "expected_behavior": "executes_cleanly",
+    "dummy_csv": "temperature,pressure\n15,1000\n25,1010\n30,1020\n",
+    "expected_output": [
+      {"value": 2, "label": "count of rows where temperature > 20"},
+      {"value": 1, "label": "count of rows where temperature <= 20"}
+    ]
   },
   {
     "id": "metadata_gen_1",
     "category": "metadata_generation",
     "prompt": "Generate a simple metadata representation in JSON format for a dataset. The dataset is titled 'Marine Biology Survey 2023', authored by 'Jane Doe', published in '2024' by 'UCSB Dataverse'. The output MUST be ONLY valid JSON and include keys for 'title', 'creator', 'publicationYear', and 'publisher'.",
-    "expected_schema_keys": ["title", "creator", "publicationYear", "publisher"]
+    "expected_schema_keys": ["title", "creator", "publicationYear", "publisher"],
+    "expected_values": {
+      "title": "Marine Biology Survey 2023",
+      "creator": "Jane Doe",
+      "publicationYear": 2024,
+      "publisher": "UCSB Dataverse"
+    }
   },
   {
     "id": "metadata_gen_2",
     "category": "metadata_generation",
     "prompt": "Generate a DataCite-style metadata JSON object for a dataset titled 'Climate Model Projections 2100', with resourceType 'Dataset', creator 'Dr. Alice Chen', publicationYear '2025', publisher 'UCSB Earth Research Institute', and a description field summarizing the dataset in one sentence. The output MUST be ONLY valid JSON containing keys: 'title', 'resourceType', 'creator', 'publicationYear', 'publisher', and 'description'.",
-    "expected_schema_keys": ["title", "resourceType", "creator", "publicationYear", "publisher", "description"]
+    "expected_schema_keys": ["title", "resourceType", "creator", "publicationYear", "publisher", "description"],
+    "expected_values": {
+      "title": "Climate Model Projections 2100",
+      "resourceType": "Dataset",
+      "creator": "Dr. Alice Chen",
+      "publicationYear": 2025,
+      "publisher": "UCSB Earth Research Institute"
+    }
   },
   {
     "id": "metadata_gen_3",
     "category": "metadata_generation",
     "prompt": "A researcher collected seismic sensor data in Santa Barbara County during Q1 2024. The principal investigator is 'Dr. Marco Ruiz' and the data is hosted by the 'UCSB Geosciences Dataverse'. Generate a JSON metadata object with the following keys: 'title', 'creator', 'subject', 'publicationYear', 'publisher', and 'geographicCoverage'. The output MUST be ONLY valid JSON.",
-    "expected_schema_keys": ["title", "creator", "subject", "publicationYear", "publisher", "geographicCoverage"]
+    "expected_schema_keys": ["title", "creator", "subject", "publicationYear", "publisher", "geographicCoverage"],
+    "expected_values": {
+      "creator": "Dr. Marco Ruiz",
+      "publicationYear": 2024,
+      "publisher": "UCSB Geosciences Dataverse",
+      "geographicCoverage": "Santa Barbara"
+    }
   },
   {
     "id": "lit_synthesis_1",

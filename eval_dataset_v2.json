@@ -1,34 +1,105 @@
 [
   {
-    "id": "code_gen_hard_1",
+    "id": "code_gen_v2_1",
     "category": "code_generation",
-    "prompt": "Write a Python script using pandas and scikit-learn. First, generate a dataset of 100 samples with features 'A' and 'B', and a binary target 'target'. Introduce some NaN values in 'A'. Impute the NaN values in 'A' using the mean. Train a LogisticRegression model and print the model's accuracy score. Output ONLY the python code inside a markdown code block, no explanations.",
-    "expected_behavior": "executes_cleanly_with_numeric_output"
+    "prompt": "A CSV file called 'data.csv' contains columns: site_id (string), species (string, either 'kelp' or 'urchin'), count (integer), depth_m (float), temperature_c (float), ph (float). Each site has exactly two rows: one for kelp and one for urchin. Write a Python script that identifies which sites have a higher urchin count than kelp count, and prints the number of such sites. Use pandas. Output ONLY the python code inside a markdown code block, no explanations.",
+    "expected_behavior": "executes_cleanly",
+    "dummy_csv": "site_id,species,count,depth_m,temperature_c,ph\nS1,kelp,120,5,14.2,8.1\nS1,urchin,340,5,14.2,8.1\nS2,kelp,89,12,11.8,7.9\nS2,urchin,210,12,11.8,7.9\nS3,kelp,55,20,9.4,7.7\nS3,urchin,480,20,9.4,7.7\nS4,kelp,200,3,16.1,8.2\nS4,urchin,95,3,16.1,8.2\n",
+    "expected_output": [
+      {"value": 3, "label": "number of sites where urchin count > kelp count"}
+    ]
   },
   {
-    "id": "metadata_gen_hard_1",
+    "id": "code_gen_v2_2",
+    "category": "code_generation",
+    "prompt": "A CSV file called 'data.csv' contains columns: site_id (string), species (string), count (integer), depth_m (float), temperature_c (float), ph (float). Each site appears twice (once per species) so depth_m, temperature_c, and ph are duplicated per site. Write a Python script that computes the Pearson correlation coefficient between depth_m and ph, using only one row per site (deduplicate by site_id first). Print the result rounded to 4 decimal places. Use pandas. Output ONLY the python code inside a markdown code block, no explanations.",
+    "expected_behavior": "executes_cleanly",
+    "dummy_csv": "site_id,species,count,depth_m,temperature_c,ph\nS1,kelp,120,5,14.2,8.1\nS1,urchin,340,5,14.2,8.1\nS2,kelp,89,12,11.8,7.9\nS2,urchin,210,12,11.8,7.9\nS3,kelp,55,20,9.4,7.7\nS3,urchin,480,20,9.4,7.7\nS4,kelp,200,3,16.1,8.2\nS4,urchin,95,3,16.1,8.2\n",
+    "expected_output": [
+      {"value": -0.9953, "label": "Pearson correlation between depth_m and ph (deduped by site)"}
+    ]
+  },
+  {
+    "id": "code_gen_v2_3",
+    "category": "code_generation",
+    "prompt": "A CSV file called 'data.csv' contains columns: site_id (string), species (string, either 'kelp' or 'urchin'), count (integer), depth_m (float), temperature_c (float), ph (float). Each site has exactly two rows, one per species. Write a Python script that computes the urchin-to-kelp count ratio for each site, then prints the site_id with the highest ratio and that ratio rounded to 2 decimal places on separate lines. Use pandas. Output ONLY the python code inside a markdown code block, no explanations.",
+    "expected_behavior": "executes_cleanly",
+    "dummy_csv": "site_id,species,count,depth_m,temperature_c,ph\nS1,kelp,120,5,14.2,8.1\nS1,urchin,340,5,14.2,8.1\nS2,kelp,89,12,11.8,7.9\nS2,urchin,210,12,11.8,7.9\nS3,kelp,55,20,9.4,7.7\nS3,urchin,480,20,9.4,7.7\nS4,kelp,200,3,16.1,8.2\nS4,urchin,95,3,16.1,8.2\n",
+    "expected_output": [
+      {"value": 8.73, "label": "highest urchin/kelp ratio across all sites"}
+    ]
+  },
+  {
+    "id": "metadata_gen_v2_1",
     "category": "metadata_generation",
-    "prompt": "Convert the following abstract into a nested JSON structure representing an academic paper. The abstract: 'We propose a novel framework for distributed learning over unreliable networks. Our method, DropNet, reduces communication overhead by 40% compared to FedAvg. Authors: Alice Smith, Bob Jones. Affiliation: UCSB. Year: 2026.' The JSON must include an 'article' key containing 'title' (inferred), 'authors' (as a list of objects with 'name' and 'affiliation'), 'year', and 'metrics' (an object with 'communication_overhead_reduction' as a number). Output MUST be ONLY valid JSON.",
-    "expected_schema_keys": ["article"]
+    "prompt": "You are given the following plain-text description of a dataset:\n\n'Airborne hyperspectral imagery collected over the Santa Ynez Mountains during the 2022 wildfire season. Data were acquired by Dr. Yuki Tanaka at UCSB's Remote Sensing Lab using a AVIRIS-NG sensor. The collection spans August–October 2022, with spatial resolution of 5 meters. Data are archived at the NSF Arctic Data Center under the Creative Commons BY 4.0 license.'\n\nGenerate a DataCite-compatible JSON metadata record inferred from the text above. Do NOT copy-paste the description verbatim. The JSON MUST include the following keys: 'title', 'creator', 'publisher', 'publicationYear', 'resourceType', 'license', and 'spatialResolution'. The 'publicationYear' MUST be an integer. Output ONLY valid JSON.",
+    "expected_schema_keys": ["title", "creator", "publisher", "publicationYear", "resourceType", "license", "spatialResolution"],
+    "expected_values": {
+      "creator": "Yuki Tanaka",
+      "publisher": "NSF Arctic Data Center",
+      "publicationYear": 2022,
+      "resourceType": "Dataset",
+      "license": "CC BY 4.0"
+    }
   },
   {
-    "id": "lit_synthesis_hard_1",
+    "id": "metadata_gen_v2_2",
+    "category": "metadata_generation",
+    "prompt": "You are given the following plain-text description:\n\n'Long-term hourly measurements of ocean pH, dissolved oxygen, and salinity collected at Stearns Wharf, Santa Barbara, from 2018 to 2023. Data collected under MBARI collaboration. Principal investigator: Dr. Lena Hoffman. Temporal resolution: 1 hour. The dataset supports ocean acidification research and is cited in 14 peer-reviewed publications.'\n\nGenerate a JSON metadata record inferred from this description. The JSON MUST include: 'title', 'creator', 'temporalCoverage', 'temporalResolution', 'measuredVariables', 'relatedPublications'. The value of 'measuredVariables' MUST be a JSON array. The value of 'relatedPublications' MUST be an integer representing the citation count. Output ONLY valid JSON.",
+    "expected_schema_keys": ["title", "creator", "temporalCoverage", "temporalResolution", "measuredVariables", "relatedPublications"],
+    "expected_values": {
+      "creator": "Lena Hoffman",
+      "temporalResolution": "1 hour",
+      "relatedPublications": 14
+    }
+  },
+  {
+    "id": "metadata_gen_v2_3",
+    "category": "metadata_generation",
+    "prompt": "You are given a dataset description with a deliberate ambiguity:\n\n'Sediment core samples extracted at three locations in the Santa Barbara Basin during the 2021 cruise. Cores range from 0 to 4 meters depth. Carbon-14 dating was performed on 12 samples by the UCSB Earth Science Department. The cruise was led by Dr. Priya Nair. The dataset is embargoed until 2026 and will then be deposited in the SESAR System for Earth Sample Registration.'\n\nGenerate a JSON metadata record. The JSON MUST include: 'title', 'creator', 'dataCollectionYear', 'embargoEndYear', 'repositoryName', 'numberOfSamples', 'method'. The 'embargoEndYear' MUST be an integer. Output ONLY valid JSON.",
+    "expected_schema_keys": ["title", "creator", "dataCollectionYear", "embargoEndYear", "repositoryName", "numberOfSamples", "method"],
+    "expected_values": {
+      "creator": "Priya Nair",
+      "embargoEndYear": 2026,
+      "repositoryName": "SESAR",
+      "numberOfSamples": 12,
+      "method": "Carbon-14"
+    }
+  },
+  {
+    "id": "lit_synthesis_v2_1",
     "category": "literature_synthesis",
-    "prompt": "Contrast the findings of these two abstracts. Abstract 1: 'We observed that ocean acidification (pH 7.8) severely reduced coral calcification rates by 30% over 6 months.' Abstract 2: 'Our 12-month study found that coral calcification rates remained stable under pH 7.8, showing unexpected resilience due to prior thermal stress exposure.' Format the output as a JSON object with keys 'abstract_1_finding', 'abstract_2_finding', and 'key_difference'.",
-    "judge_rubric": "Score 1-5 based on Accuracy. 5 means perfect extraction of both findings (Abstract 1: 30% reduction; Abstract 2: stable/resilience) and correctly identifying the key difference (sensitivity vs resilience). Deduct points for missing details or hallucinations. Ensure the output is valid JSON."
+    "prompt": "Read the following two abstracts and answer the question below.\n\nAbstract A: 'Jennings et al. (2021) monitored kelp canopy extent across 18 sites in the Southern California Bight using monthly Landsat-8 imagery from 2015–2020. They found a 34% average decline in canopy area, with the steepest losses at sites with sea surface temperatures exceeding 18°C. The study concluded that thermal stress was the primary driver of kelp loss.'\n\nAbstract B: 'Reyes & Kim (2022) surveyed the same region using SCUBA transects at 12 of the same sites, finding significant urchin barrens at sites coinciding with the largest kelp declines in Jennings et al. However, urchin densities were highest at sites with the coldest SST, where thermal stress was absent. They proposed that urchin grazing, not temperature, was the dominant proximate driver.'\n\nQuestion: Do the two studies agree on the primary driver of kelp loss? Explain the key methodological difference that may explain any discrepancy. Format your response as a JSON object with keys 'agreement' (boolean), 'study_a_driver', 'study_b_driver', and 'methodological_difference'.",
+    "judge_rubric": "Score 1-5 on accuracy of synthesis. 5 = perfect: agreement=false, study_a_driver correctly identifies thermal stress / SST, study_b_driver correctly identifies urchin grazing, methodological_difference identifies remote sensing vs SCUBA transects OR spatial scale OR indirect vs direct measurement. Deduct 1 point for each incorrect or missing field. Deduct 1 additional point if not valid JSON. Score 1 if the model says the studies agree."
   },
   {
-    "id": "ocr_1",
-    "category": "ocr",
-    "prompt": "Transcribe the table titled 'AFECCIONES METEOROLOGICAS DE ANTES DE AYER' from the provided image. Format the output strictly as a Markdown table.",
-    "image_path": "images/dmcz_18250101_page_1.png",
-    "judge_rubric": "Score 1-5 based on OCR Accuracy. Compare against the ground truth. 5 means perfect Markdown table containing columns for 'Epocas del dia', 'Barómetro', 'Termóm', 'Vientos', and 'Atmósfera'. Deduct points for missing rows, hallucinated data, or incorrect table formatting."
+    "id": "lit_synthesis_v2_2",
+    "category": "literature_synthesis",
+    "prompt": "Read this abstract and answer the question below. Your answer must be grounded ONLY in information stated in the abstract — do not add outside knowledge.\n\nAbstract: 'We conducted a meta-analysis of 47 field studies examining the relationship between riparian buffer width and nitrate removal efficiency in agricultural watersheds in the United States (1998–2019). Studies were stratified by dominant soil type (clay, loam, sand) and buffer width categories (<5m, 5–15m, >15m). Our pooled estimate shows a mean nitrate removal efficiency of 68% (95% CI: 61–75%) for buffers wider than 15m on clay soils. For sandy soils, removal efficiency was 29% (95% CI: 19–39%) regardless of buffer width. Loam soils showed intermediate and highly variable results (mean 51%, SD 22%). We conclude that soil type is a stronger predictor of nitrate removal than buffer width alone.'\n\nQuestion: A conservation manager wants to reduce nitrate runoff on a farm with sandy soil and is planning a 20-meter riparian buffer. Based strictly on this meta-analysis, what is the most accurate prediction of nitrate removal efficiency, and what is the main conclusion they should take away? Format as JSON with keys 'predicted_efficiency', 'confidence_interval', and 'key_recommendation'.",
+    "judge_rubric": "Score 1-5 on fidelity to the abstract. 5 = perfect: predicted_efficiency is ~29% (not 68%), confidence_interval is 19-39%, key_recommendation correctly states that buffer width does NOT improve removal on sandy soils and/or that soil type is the stronger predictor. Heavily penalize (score 1-2) if the model uses the clay figure (68%) for sandy soil — this is a critical reading-comprehension failure. Deduct 1 point if not valid JSON."
   },
   {
-    "id": "vision_qa_1",
-    "category": "vision_qa",
-    "prompt": "What is the year of publication on this cover page? Answer strictly with the 4 digits.",
-    "image_path": "images/CCundinamarca_page_1.png",
-    "expected_exact_match": "1811"
+    "id": "lit_synthesis_v2_3",
+    "category": "literature_synthesis",
+    "prompt": "Read the following abstract carefully. Some sentences contain subtly conflicting claims. Identify and report them.\n\nAbstract: 'This study analyzed 15 years of satellite-derived chlorophyll-a concentrations in Monterey Bay to assess phytoplankton bloom dynamics. We found that spring blooms (March–May) have advanced by an average of 8 days per decade since 2005, consistent with earlier stratification driven by rising sea surface temperatures. Importantly, total annual primary productivity has remained stable despite the earlier onset, suggesting compensatory shifts in fall productivity. However, our analysis of in situ fluorometer data from the same period shows a 12% decline in total annual integrated chlorophyll-a, contradicting the satellite-derived productivity estimates. We attribute this discrepancy to known saturation artifacts in coastal satellite retrievals above 10 mg/m³.'\n\nFormat your response as a JSON object with keys: 'main_finding', 'internal_conflict' (describing the contradicting claims), and 'proposed_explanation'.",
+    "judge_rubric": "Score 1-5 on depth of analysis. 5 = perfect: main_finding mentions bloom advancing ~8 days/decade; internal_conflict explicitly identifies the contradiction between stable satellite productivity and 12% decline in in-situ chlorophyll-a; proposed_explanation correctly identifies satellite saturation artifacts above 10 mg/m³. Deduct 1 point for each missing or vague element. Score 1-2 if the model does not identify the contradiction at all (just summarizes). Deduct 1 point if not valid JSON."
+  },
+  {
+    "id": "data_interp_v2_1",
+    "category": "data_interpretation",
+    "prompt": "A study measures kelp biomass (kg/m²) and water temperature (°C) at 40 sites and finds a strong negative correlation (r = -0.82, p < 0.001). A follow-up analysis reveals that 30 of the 40 sites are in a northern cold region and 10 are in a southern warm region. Within each region separately, the correlation between kelp biomass and temperature is near zero (r ≈ -0.05).\n\nWhat is the most accurate interpretation of this pattern?\nA) The original correlation of -0.82 is spurious because the sample size was too small.\nB) Region (north vs south) is a confounding variable that explains the apparent correlation between temperature and kelp biomass.\nC) The within-region analyses are unreliable because they have smaller sample sizes.\nD) Temperature has a delayed effect on kelp biomass that disappears when regions are analyzed separately.\n\nOutput ONLY the letter of the correct answer.",
+    "expected_exact_match": "B"
+  },
+  {
+    "id": "data_interp_v2_2",
+    "category": "data_interpretation",
+    "prompt": "Two logistic regression models predict the presence/absence of a rare seabird at 200 survey sites:\n\nModel 1: predictors = [sea surface temperature, chlorophyll-a, distance to shore]\n  - AUC: 0.78\n  - AIC: 241.3\n  - All predictors significant (p < 0.05)\n\nModel 2: predictors = [sea surface temperature, chlorophyll-a, distance to shore, year, observer_id]\n  - AUC: 0.79\n  - AIC: 238.1\n  - 'year' and 'observer_id' are not significant (p > 0.3)\n\nWhich model should be preferred for inference about habitat associations, and why?\nA) Model 1, because all its predictors are statistically significant.\nB) Model 1, because adding non-significant predictors always reduces model validity.\nC) Model 2, because it has a lower AIC and slightly higher AUC, indicating better fit.\nD) Model 2, because more predictors always improve ecological models.\n\nOutput ONLY the letter of the correct answer.",
+    "expected_exact_match": "A"
+  },
+  {
+    "id": "data_interp_v2_3",
+    "category": "data_interpretation",
+    "prompt": "A 10-year time series of annual mean ocean pH at a monitoring station shows the following:\n- Years 1–5: mean pH = 8.12, SD = 0.04\n- Years 6–10: mean pH = 8.06, SD = 0.05\n- Linear trend over all 10 years: slope = -0.007 pH units/year, p = 0.03\n- Autocorrelation at lag-1: r = 0.61\n\nA researcher concludes: 'Ocean acidification is significantly reducing pH at this station at a rate of 0.007 units/year.'\n\nWhat is the most important statistical concern with this conclusion?\nA) The sample size of 10 years is too small to detect any trend.\nB) The difference between the two 5-year means is not large enough to be meaningful.\nC) The SD increased in years 6–10, which invalidates the linear regression.\nD) The high autocorrelation (r = 0.61) means observations are not independent, which inflates the significance of the trend test.\n\nOutput ONLY the letter of the correct answer.",
+    "expected_exact_match": "D"
   }
 ]
