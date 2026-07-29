@@ -274,24 +274,43 @@ def score_exact_match(
     expected_match: str,
     include_output: bool = False,
 ) -> dict:
-    """Checks that the response selects the correct multiple-choice letter.
+    """Checks that the response matches the expected value.
 
-    Accepts common model answer formats:
-      "C", "C)", "The answer is C", "C. Temp vs Humidity"
-    Rejects letters that appear mid-sentence ("C is wrong…").
+    Used for both multiple-choice letters and short numeric/text OCR answers.
+
+    For multiple-choice letters (single A–D character):
+      Accepts "C", "C)", "The answer is C", "C. Temp vs Humidity"
+      Rejects letters appearing mid-sentence ("C is wrong…").
+
+    For short OCR/numeric answers (e.g. "59.0", "SE"):
+      Uses _field_match for loose comparison:
+        - Case-insensitive, strip punctuation
+        - Comma vs period decimal ("59,0" ≈ "59.0")
+        - Space-separated tokens ("59 0" ≈ "59.0" — common OCR artefact
+          in historical documents where periods are read as spaces)
     """
     text   = response_text.strip()
-    letter = re.escape(expected_match.upper())
+    is_mcq = len(expected_match) == 1 and expected_match.upper() in "ABCDEFGHIJ"
 
-    pattern = re.compile(
-        rf"(?:^{letter}(?:[).:\n]|$)|(?:answer(?:\s+is)?|the\s+answer\s+is)\s*:?\s*{letter}\b)",
-        re.IGNORECASE,
-    )
-
-    if pattern.search(text):
-        d = {"score": 5, "reason": f"Matched expected answer: {expected_match}"}
+    if is_mcq:
+        # Multiple-choice: anchor-based pattern match
+        letter = re.escape(expected_match.upper())
+        pattern = re.compile(
+            rf"(?:^{letter}(?:[).:\n]|$)|(?:answer(?:\s+is)?|the\s+answer\s+is)\s*:?\s*{letter}\b)",
+            re.IGNORECASE,
+        )
+        if pattern.search(text):
+            d = {"score": 5, "reason": f"Matched expected answer: {expected_match}"}
+        else:
+            d = {"score": 1, "reason": f"Expected '{expected_match}', got: '{text[:40]}'"}
     else:
-        d = {"score": 1, "reason": f"Expected '{expected_match}', got: '{text[:40]}'"}
+        # Short OCR / numeric answer: use loose field matching
+        # Strip the model response down to its first meaningful token
+        first_token = text.split()[0].rstrip(".,;") if text.split() else text
+        if _field_match(first_token, expected_match) or _field_match(text, expected_match):
+            d = {"score": 5, "reason": f"Matched expected value: {expected_match}"}
+        else:
+            d = {"score": 1, "reason": f"Expected '{expected_match}', got: '{text[:40]}'"}
 
     if include_output:
         d["model_output"] = text

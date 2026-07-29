@@ -3,7 +3,7 @@ import json
 import csv
 import os
 from eval_engine import run_evaluation
-from eval_config import DEFAULT_JUDGE_SERVICE, DEFAULT_JUDGE_MODEL
+from eval_config import DEFAULT_JUDGE_SERVICE, DEFAULT_JUDGE_MODEL, TARGET_SERVICES
 
 def generate_summary_csv(json_path="results_log.json", csv_path="results_summary.csv"):
     if not os.path.exists(json_path):
@@ -79,9 +79,12 @@ Available datasets:
   eval_dataset_v2.json         Harder v2 benchmark (text only)
   eval_dataset_multimodal.json OCR, document extraction, and vision QA (requires vision-capable models)
 
+Available services:
+  grit, CIT, dream-lab, aicommons
+
 Examples:
   uv run python run_eval.py --dataset eval_dataset_v2.json
-  uv run python run_eval.py --dataset eval_dataset_multimodal.json --include-model-output
+  uv run python run_eval.py --dataset eval_dataset_multimodal.json --services dream-lab aicommons --include-model-output
   uv run python run_eval.py --dataset eval_dataset_v2.json --resume --include-model-output --include-judge-detail
         """,
     )
@@ -90,6 +93,18 @@ Examples:
         type=str,
         default="eval_dataset.json",
         help="Path to the evaluation dataset JSON file (default: eval_dataset.json).",
+    )
+    parser.add_argument(
+        "--services",
+        type=str,
+        nargs="+",
+        default=None,
+        metavar="SERVICE",
+        help=(
+            f"One or more services to evaluate (default: {TARGET_SERVICES}). "
+            "Available: grit, CIT, dream-lab, aicommons. "
+            "Example: --services dream-lab aicommons"
+        ),
     )
     parser.add_argument("--test-run", action="store_true", help="Run only the first task against a maximum of 2 models per service.")
     parser.add_argument("--judge-service", type=str, default=DEFAULT_JUDGE_SERVICE, help=f"Service for the Judge LLM (default: {DEFAULT_JUDGE_SERVICE}).")
@@ -108,13 +123,22 @@ Examples:
     if not os.path.exists(args.dataset):
         parser.error(f"Dataset file not found: '{args.dataset}'")
 
+    # Validate --services values
+    known_services = {"grit", "CIT", "dream-lab", "aicommons"}
+    target_services = args.services or TARGET_SERVICES
+    unknown = [s for s in target_services if s not in known_services]
+    if unknown:
+        parser.error(f"Unknown service(s): {unknown}. Available: {sorted(known_services)}")
+
     print("=======================================")
     print(f"Starting Evaluation Pipeline...")
-    print(f"  Dataset : {args.dataset}")
-    print(f"  Judge   : {args.judge_service} / {args.judge_model}")
+    print(f"  Dataset  : {args.dataset}")
+    print(f"  Services : {target_services}")
+    print(f"  Judge    : {args.judge_service} / {args.judge_model}")
     print("=======================================")
     run_evaluation(
         dataset_path=args.dataset,
+        target_services=target_services,
         test_run=args.test_run,
         judge_service=args.judge_service,
         judge_model=args.judge_model,

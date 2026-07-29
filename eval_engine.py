@@ -173,6 +173,7 @@ def _append_result(result: dict, log_path: str = "results_log.json") -> None:
 
 def run_evaluation(
     dataset_path: str = "eval_dataset.json",
+    target_services: list[str] | None = None,
     test_run: bool = False,
     judge_service: str = DEFAULT_JUDGE_SERVICE,
     judge_model: str = DEFAULT_JUDGE_MODEL,
@@ -182,6 +183,9 @@ def run_evaluation(
     resume: bool = False,
 ):
     tracker = TokenTracker()
+
+    # Resolve target services: CLI override → config default
+    services_to_run = target_services if target_services else TARGET_SERVICES
 
     # 1. Load Dataset
     try:
@@ -229,7 +233,7 @@ def run_evaluation(
     new_results_count = 0
 
     # 4. Iterate Target Services
-    for svc_name in TARGET_SERVICES:
+    for svc_name in services_to_run:
         logging.info(f"\n--- Evaluating Service: {svc_name} ---")
 
         service_budget = SERVICE_BUDGETS.get(svc_name, _DEFAULT_BUDGET)
