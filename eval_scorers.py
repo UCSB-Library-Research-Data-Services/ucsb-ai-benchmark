@@ -322,6 +322,40 @@ def score_exact_match(
 # Judge helpers
 # ---------------------------------------------------------------------------
 
+def _normalise_judge_response(raw: dict) -> dict:
+    """Flatten and normalise a judge JSON response into a canonical form.
+
+    Handles two known structural variations:
+    1. Flat (expected):
+         {"score": 4, "reason": "...", "detailed_feedback": "..."}
+    2. Nested envelope (Claude sometimes wraps output):
+         {"evaluation": {"score": 4, "reasoning": "..."}}
+
+    Also normalises key aliases:
+    - "reasoning" → "reason"
+    - "feedback"  → "detailed_feedback"
+    - "rationale" → "reason"
+    """
+    # Unwrap single-key envelope (e.g. {"evaluation": {...}})
+    if len(raw) == 1:
+        inner = next(iter(raw.values()))
+        if isinstance(inner, dict) and "score" in inner:
+            raw = inner
+
+    # Normalise key aliases
+    alias_map = {
+        "reasoning":        "reason",
+        "rationale":        "reason",
+        "explanation":      "reason",
+        "feedback":         "detailed_feedback",
+        "detailed_reason":  "detailed_feedback",
+    }
+    normalised = {}
+    for k, v in raw.items():
+        normalised[alias_map.get(k, k)] = v
+    return normalised
+
+
 def extract_judge_feedback(judge_json_response: dict) -> str:
     """Extract multi-line detailed feedback from judge response."""
     return judge_json_response.get(
@@ -385,7 +419,14 @@ def score_with_judge(
 
         try:
             judge_text_clean = extract_code_block(judge_text)
-            result = json.loads(judge_text_clean)
+            raw = json.loads(judge_text_clean)
+
+            # Normalise the judge response — different models wrap their output
+            # differently.  Claude sometimes returns:
+            #   {"evaluation": {"score": 4, "reasoning": "..."}}
+            # instead of the flat {"score": 4, "reason": "..."} we asked for.
+            # We flatten one level of nesting and normalise key aliases.
+            result = _normalise_judge_response(raw)
 
             d = {
                 "score":        result.get("score", 0),
