@@ -67,13 +67,19 @@ def main():
     parser.add_argument("--test-run", action="store_true", help="Run a quick test with 1 task and limited models.")
     parser.add_argument("--judge-service", type=str, default=DEFAULT_JUDGE_SERVICE, help=f"Service to use for the Judge LLM (default: {DEFAULT_JUDGE_SERVICE}).")
     parser.add_argument("--judge-model", type=str, default=DEFAULT_JUDGE_MODEL, help=f"Model to use for the Judge LLM (default: {DEFAULT_JUDGE_MODEL}).")
+    parser.add_argument("--force-all-models", action="store_true", help="Bypass the exclusion list and test all active models.")
     
     args = parser.parse_args()
     
     print("=======================================")
     print("Starting Evaluation Pipeline...")
     print("=======================================")
-    run_evaluation(test_run=args.test_run, judge_service=args.judge_service, judge_model=args.judge_model)
+    run_evaluation(
+        test_run=args.test_run, 
+        judge_service=args.judge_service, 
+        judge_model=args.judge_model,
+        force_all_models=args.force_all_models
+    )
     
     print("\n=======================================")
     print("Generating Summary Report...")

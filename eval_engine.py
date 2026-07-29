@@ -2,7 +2,7 @@ import json
 import time
 import logging
 from config import SERVICES
-from eval_config import TARGET_SERVICES, DEFAULT_JUDGE_SERVICE, DEFAULT_JUDGE_MODEL, SERVICE_BUDGETS
+from eval_config import TARGET_SERVICES, DEFAULT_JUDGE_SERVICE, DEFAULT_JUDGE_MODEL, SERVICE_BUDGETS, EXCLUDED_MODELS
 from eval_scorers import score_programmatic_code, score_programmatic_metadata, score_exact_match, score_with_judge
 from token_tracker import TokenTracker
 from openai import OpenAI
@@ -19,7 +19,7 @@ def get_client(service_name: str) -> OpenAI:
         timeout=120.0
     )
 
-def run_evaluation(test_run: bool = False, judge_service: str = DEFAULT_JUDGE_SERVICE, judge_model: str = DEFAULT_JUDGE_MODEL):
+def run_evaluation(test_run: bool = False, judge_service: str = DEFAULT_JUDGE_SERVICE, judge_model: str = DEFAULT_JUDGE_MODEL, force_all_models: bool = False):
     tracker = TokenTracker()
     
     # 1. Load Dataset
@@ -62,17 +62,21 @@ def run_evaluation(test_run: bool = False, judge_service: str = DEFAULT_JUDGE_SE
             logging.error(f"Failed to connect to {target_service_name}: {e}")
             continue
 
-        if test_run:
-            # Evaluate max 2 models per service on test run, ensuring we skip failing/cloud models for testing
-            active_models = [m for m in active_models if "cloud" not in m and "embedding" not in m and "reranker" not in m][:2]
-
         # 4. Iterate Models & Prompts
+        evaluated_count = 0
         for model_id in active_models:
-            # Filter out known embedding/reranker models before evaluation
-            if "embedding" in model_id.lower() or "reranker" in model_id.lower():
-                continue
+            if not force_all_models:
+                # Filter out explicitly excluded models or known non-generative text models
+                if model_id in EXCLUDED_MODELS:
+                    logging.info(f"  Skipping Model: {model_id} (in exclusion list)")
+                    continue
+                if any(x in model_id.lower() for x in ["embedding", "reranker", "cloud"]):
+                    logging.info(f"  Skipping Model: {model_id} (matches exclusion pattern)")
+                    continue
             
             logging.info(f"  Testing Model: {model_id}")
+            evaluated_count += 1
+
             
             for test_case in dataset:
                 logging.info(f"    Task: {test_case['category']} ({test_case['id']})")
@@ -136,6 +140,10 @@ def run_evaluation(test_run: bool = False, judge_service: str = DEFAULT_JUDGE_SE
 
                 except Exception as e:
                     logging.error(f"      -> Error testing {model_id} on {test_case['id']}: {e}")
+
+            if test_run and evaluated_count >= 2:
+                logging.info(f"  Reached max 2 models for test run on {target_service_name}")
+                break
 
     # 6. Save Output
     try:

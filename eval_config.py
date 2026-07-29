@@ -18,3 +18,13 @@ SERVICE_BUDGETS = {
 
 # The path to persist token usage across runs
 TOKEN_TRACKER_FILE = ".token_usage.json"
+
+# Models to exclude by default (e.g., embeddings, rerankers, OCR, or currently unauthorized models)
+EXCLUDED_MODELS = [
+    "glm-ocr:latest",
+    "bge-reranker",
+    "qwen3-embedding-8b",
+    "deepseek-v4-flash:cloud",
+    "glm-5.2:cloud",
+    "gemini-embedding-2"
+]

@@ -61,6 +61,12 @@ For final evaluations, you can swap the Judge to a more capable model available 
 uv run python run_eval.py --judge-service aicommons --judge-model claude-v4.6-sonnet
 ```
 
+**4. Force run all models**
+By default, the script skips known problematic models (e.g., embeddings, rerankers, models returning 400 errors) listed in `eval_config.py`. To bypass this and evaluate all available models:
+```bash
+uv run python run_eval.py --force-all-models
+```
+
 ## Reading the Results
 
 The pipeline generates two files upon completion:
