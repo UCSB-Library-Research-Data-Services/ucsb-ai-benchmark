@@ -1,0 +1,620 @@
+---
+title: "Service Comparison"
+format:
+  html:
+    page-layout: full
+---
+
+```{=html}
+<div class="hero-section" style="padding:2.5rem 0 1.5rem">
+  <h1 style="font-size:1.9rem">Service Comparison</h1>
+  <p class="lead">
+    How do GRIT, CIT, and AICommons compare as AI platforms?
+    This page examines scores by category, the speed-vs-accuracy trade-off,
+    and — critically — how the same model behaves when hosted on different infrastructure.
+  </p>
+</div>
+
+<div class="method-box" style="margin-bottom:2rem">
+  <strong>Infrastructure context: </strong>
+  <strong style="color:#58a6ff">GRIT</strong> and <strong style="color:#3fb950">CIT</strong>
+  run all models <em>locally via Ollama</em> on UCSB-managed hardware.
+  <strong style="color:#bc8cff">AICommons</strong> routes requests through
+  <em>Amazon Bedrock</em> (AWS-hosted).
+  This matters: the same model binary running on different hardware produces
+  identical accuracy scores but dramatically different throughput and latency.
+</div>
+```
+
+```{ojs}
+//| output: false
+summary  = FileAttachment("data/results_summary.csv").csv({ typed: true })
+lb       = FileAttachment("data/leaderboard.json").json()
+
+service_colors = ({
+  "grit":      "#58a6ff",
+  "CIT":       "#3fb950",
+  "aicommons": "#bc8cff"
+})
+service_labels = ({ "grit": "GRIT", "CIT": "CIT", "aicommons": "AICommons" })
+
+cat_labels_map = ({
+  "code_generation":     "Code Generation",
+  "metadata_generation": "Metadata Generation",
+  "literature_synthesis":"Literature Synthesis",
+  "data_interpretation": "Data Interpretation",
+  "ocr":                 "OCR",
+  "document_extraction": "Document Extraction",
+  "vision_qa":           "Vision QA"
+})
+
+// Canonical: for lit_synthesis prefer claude judge; deduplicate
+canonical_summary = {
+  const map = new Map();
+  for (const row of summary) {
+    const k = row.service + "|||" + row.model + "|||" + row.category;
+    const existing = map.get(k);
+    if (!existing) { map.set(k, row); }
+    else if (row.judge_model === "claude-v4.6-sonnet") { map.set(k, row); }
+  }
+  return [...map.values()];
+}
+
+svcs = ["grit","CIT","aicommons"]
+cats_text = ["code_generation","metadata_generation","literature_synthesis","data_interpretation"]
+cats_all  = [...cats_text, "ocr", "document_extraction", "vision_qa"]
+```
+
+---
+
+## Average Score by Category
+
+```{=html}
+<p class="section-subheading">
+  Mean score (1–5) per service per benchmark category, averaged across all models on that service.
+  Scores use the canonical judge (Claude for literature synthesis).
+</p>
+<div class="chart-card">
+  <h4>Avg Score per Category, by Service</h4>
+  <div class="chart-subtitle">Bar height = mean score across all models on that service. Max = 5.0</div>
+  <div id="grouped-bars"></div>
+</div>
+```
+
+```{ojs}
+{
+  // Aggregate: service × category → mean avg_score
+  const agg = {};
+  for (const row of canonical_summary) {
+    const k = row.service + "|||" + row.category;
+    if (!agg[k]) agg[k] = { scores: [], service: row.service, category: row.category };
+    agg[k].scores.push(row.avg_score);
+  }
+
+  const data = Object.values(agg).map(d => ({
+    service:  d.service,
+    category: d.category,
+    cat_label: cat_labels_map[d.category] || d.category,
+    mean_score: d.scores.reduce((a,b)=>a+b,0) / d.scores.length
+  }));
+
+  // Only categories with data
+  const cats_present = [...new Set(data.map(d=>d.category))];
+  const cat_order = cats_all.filter(c => cats_present.includes(c));
+
+  const width  = 820;
+  const height = 340;
+  const marginL = 48, marginB = 90, marginT = 20, marginR = 20;
+  const plotW = width - marginL - marginR;
+  const plotH = height - marginT - marginB;
+
+  // Outer scale: categories
+  const x0 = d3.scaleBand()
+    .domain(cat_order)
+    .range([0, plotW])
+    .paddingInner(0.25);
+
+  // Inner scale: services
+  const x1 = d3.scaleBand()
+    .domain(svcs)
+    .range([0, x0.bandwidth()])
+    .paddingInner(0.08);
+
+  const y = d3.scaleLinear().domain([0, 5]).range([plotH, 0]);
+
+  const svg = d3.create("svg")
+    .attr("width", width).attr("height", height)
+    .style("font-family", "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif")
+    .style("overflow","visible");
+
+  const g = svg.append("g").attr("transform", `translate(${marginL},${marginT})`);
+
+  // Grid lines
+  [1,2,3,4,5].forEach(v => {
+    g.append("line")
+      .attr("x1",0).attr("x2",plotW)
+      .attr("y1",y(v)).attr("y2",y(v))
+      .attr("stroke","#30363d").attr("stroke-dasharray","3,3");
+    g.append("text")
+      .attr("x",-6).attr("y",y(v)+4)
+      .attr("text-anchor","end")
+      .attr("font-size",10).attr("fill","#8b949e")
+      .text(v);
+  });
+
+  // Bars
+  cat_order.forEach(cat => {
+    const catData = data.filter(d => d.category === cat);
+    const gx = g.append("g").attr("transform", `translate(${x0(cat)},0)`);
+    svcs.forEach(svc => {
+      const d = catData.find(r => r.service === svc);
+      if (!d) return;
+      const bx = x1(svc);
+      const by = y(d.mean_score);
+      const bh = plotH - by;
+      // Bar
+      gx.append("rect")
+        .attr("x",bx).attr("y",by)
+        .attr("width",x1.bandwidth()).attr("height",bh)
+        .attr("rx",3)
+        .attr("fill", service_colors[svc])
+        .attr("opacity", 0.85);
+      // Value label
+      if (bh > 14) {
+        gx.append("text")
+          .attr("x", bx + x1.bandwidth()/2).attr("y", by - 4)
+          .attr("text-anchor","middle")
+          .attr("font-size",9.5).attr("fill","#e6edf3")
+          .text(d.mean_score.toFixed(2));
+      }
+    });
+  });
+
+  // X axis labels
+  cat_order.forEach(cat => {
+    g.append("text")
+      .attr("transform", `translate(${x0(cat) + x0.bandwidth()/2},${plotH+12}) rotate(-30)`)
+      .attr("text-anchor","end")
+      .attr("font-size",11).attr("fill","#8b949e")
+      .text(cat_labels_map[cat] || cat);
+  });
+
+  // Legend
+  const lx = plotW - svcs.length * 90;
+  svcs.forEach((svc, i) => {
+    g.append("rect")
+      .attr("x", lx + i*90).attr("y", plotH + 55)
+      .attr("width",11).attr("height",11).attr("rx",2)
+      .attr("fill", service_colors[svc]);
+    g.append("text")
+      .attr("x", lx + i*90 + 14).attr("y", plotH + 64)
+      .attr("font-size",11).attr("fill","#8b949e")
+      .text(service_labels[svc]);
+  });
+
+  return svg.node();
+}
+```
+
+---
+
+## Speed vs. Accuracy
+
+```{=html}
+<p class="section-subheading">
+  Each dot represents one model on one service. X-axis = average throughput (tokens/sec),
+  Y-axis = overall average score. Dot size = number of categories tested.
+  The ideal model sits in the top-right corner: fast <em>and</em> accurate.
+</p>
+<div class="chart-card">
+  <h4>Throughput vs. Accuracy — All Models</h4>
+  <div class="chart-subtitle">Hover over a dot to see model details. Colored by service.</div>
+  <div id="scatter-plot"></div>
+</div>
+```
+
+```{ojs}
+{
+  const width  = 780;
+  const height = 420;
+  const mL=70, mB=55, mT=20, mR=30;
+  const pW = width-mL-mR;
+  const pH = height-mT-mB;
+
+  const x = d3.scaleLinear()
+    .domain([0, d3.max(lb, d=>d.avg_tps)*1.08])
+    .range([0, pW]);
+
+  const y = d3.scaleLinear().domain([0, 5.3]).range([pH, 0]);
+
+  const rScale = d3.scaleSqrt()
+    .domain([1, d3.max(lb, d=>d.categories_tested)])
+    .range([5, 12]);
+
+  const svg = d3.create("svg")
+    .attr("width", width).attr("height", height)
+    .style("font-family","-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif")
+    .style("overflow","visible");
+
+  const g = svg.append("g").attr("transform",`translate(${mL},${mT})`);
+
+  // Grid
+  x.ticks(6).forEach(v => {
+    g.append("line").attr("x1",x(v)).attr("x2",x(v)).attr("y1",0).attr("y2",pH)
+     .attr("stroke","#30363d").attr("stroke-dasharray","3,3");
+  });
+  y.ticks(5).forEach(v => {
+    g.append("line").attr("x1",0).attr("x2",pW).attr("y1",y(v)).attr("y2",y(v))
+     .attr("stroke","#30363d").attr("stroke-dasharray","3,3");
+    g.append("text").attr("x",-8).attr("y",y(v)+4)
+     .attr("text-anchor","end").attr("font-size",10).attr("fill","#8b949e")
+     .text(v);
+  });
+  x.ticks(6).forEach(v => {
+    g.append("text").attr("x",x(v)).attr("y",pH+16)
+     .attr("text-anchor","middle").attr("font-size",10).attr("fill","#8b949e")
+     .text(v);
+  });
+
+  // Axis labels
+  g.append("text").attr("x",pW/2).attr("y",pH+40)
+   .attr("text-anchor","middle").attr("font-size",12).attr("fill","#8b949e")
+   .text("Average Throughput (tokens / sec)");
+  g.append("text")
+   .attr("transform",`translate(-52,${pH/2}) rotate(-90)`)
+   .attr("text-anchor","middle").attr("font-size",12).attr("fill","#8b949e")
+   .text("Overall Average Score");
+
+  // Points
+  const tooltip = d3.select("body").select("#scatter-tooltip").node()
+    ? d3.select("#scatter-tooltip")
+    : d3.select("body").append("div")
+        .attr("id","scatter-tooltip")
+        .style("position","fixed").style("pointer-events","none")
+        .style("background","#1c2128").style("border","1px solid #30363d")
+        .style("border-radius","6px").style("padding","8px 12px")
+        .style("font-size","12px").style("color","#e6edf3")
+        .style("display","none").style("z-index","9999").style("max-width","220px");
+
+  lb.forEach(d => {
+    const cx = x(d.avg_tps);
+    const cy = y(d.overall_score);
+    const r  = rScale(d.categories_tested);
+
+    g.append("circle")
+      .attr("cx",cx).attr("cy",cy).attr("r",r)
+      .attr("fill", service_colors[d.service])
+      .attr("opacity",0.8)
+      .attr("stroke","#0d1117").attr("stroke-width",1.5)
+      .style("cursor","pointer")
+      .on("mouseover", function(event) {
+        d3.select(this).attr("opacity",1).attr("stroke","#e6edf3");
+        tooltip
+          .style("display","block")
+          .html(`<strong>${d.model}</strong><br>
+                 <span style="color:${service_colors[d.service]}">${service_labels[d.service]}</span>
+                 &nbsp;·&nbsp; ${d.infra}<br>
+                 Score: <strong>${d.overall_score.toFixed(2)}</strong><br>
+                 TPS: <strong>${d.avg_tps.toFixed(0)}</strong><br>
+                 Categories: ${d.categories_tested}`);
+      })
+      .on("mousemove", function(event) {
+        tooltip.style("left",(event.clientX+14)+"px").style("top",(event.clientY-28)+"px");
+      })
+      .on("mouseout", function() {
+        d3.select(this).attr("opacity",0.8).attr("stroke","#0d1117");
+        tooltip.style("display","none");
+      });
+
+    // Label for notable outliers (very slow or very fast)
+    if (d.avg_tps > 150 || d.avg_tps < 12 || d.model === "gpt-4o") {
+      g.append("text")
+        .attr("x", cx + r + 4).attr("y", cy + 4)
+        .attr("font-size",9).attr("fill","#8b949e")
+        .text(d.model.replace(":latest","").replace(":31b","·31b").substring(0,18));
+    }
+  });
+
+  // Legend
+  svcs.forEach((svc,i) => {
+    g.append("circle").attr("cx", i*100).attr("cy", pH+46).attr("r",6)
+     .attr("fill",service_colors[svc]).attr("opacity",0.85);
+    g.append("text").attr("x", i*100+10).attr("y",pH+50)
+     .attr("font-size",11).attr("fill","#8b949e").text(service_labels[svc]);
+  });
+  // Dot size legend
+  g.append("text").attr("x",320).attr("y",pH+50)
+   .attr("font-size",10).attr("fill","#6e7681")
+   .text("Dot size = number of categories tested");
+
+  return svg.node();
+}
+```
+
+---
+
+## Cross-Service Model Comparison
+
+```{=html}
+<p class="section-subheading">
+  Several model families are available on both GRIT and CIT — sometimes with different
+  parameter counts or quantisation. This section isolates those pairs to ask:
+  <em>does the same model perform differently depending on which UCSB service hosts it?</em>
+</p>
+```
+
+```{ojs}
+//| output: false
+
+// Models that appear on multiple services
+cross_pairs = [
+  {
+    family: "Gemma 4 · 27B",
+    entries: [
+      { service:"grit",  model:"gemma4:31b" },
+      { service:"CIT",   model:"gemma-4-31b" }
+    ]
+  },
+  {
+    family: "Qwen3-Coder-Next",
+    entries: [
+      { service:"grit",  model:"qwen3-coder-next:latest" },
+      { service:"CIT",   model:"Qwen3-Coder-Next" }
+    ]
+  },
+  {
+    family: "GPT-OSS (20B vs 120B)",
+    entries: [
+      { service:"grit",  model:"gpt-oss:20b" },
+      { service:"CIT",   model:"gpt-oss-120b" }
+    ]
+  },
+  {
+    family: "Qwen3 / Qwen3.5",
+    entries: [
+      { service:"grit",  model:"qwen3.5:latest" },
+      { service:"CIT",   model:"qwen3.6-35b-a3b" }
+    ]
+  },
+  {
+    family: "Mistral",
+    entries: [
+      { service:"grit",  model:"mistral:latest" },
+      { service:"CIT",   model:"mistral-small-4-119b-2603" }
+    ]
+  }
+]
+
+// Build lookup from leaderboard: service+model → full entry
+lb_map = {
+  const m = new Map();
+  for (const r of lb) m.set(r.service+"|||"+r.model, r);
+  return m;
+}
+
+// Build per-category comparison data
+cross_cat_cols = ["score_code_generation","score_metadata_generation",
+                  "score_literature_synthesis","score_data_interpretation"]
+cross_cat_labels = ["Code Gen","Metadata Gen","Lit. Synthesis","Data Interp."]
+```
+
+```{ojs}
+{
+  // Two-panel layout: Score comparison bars + TPS comparison bars
+  const families = cross_pairs.map(p => {
+    const enriched = p.entries.map(e => {
+      const key = e.service + "|||" + e.model;
+      const lb_entry = lb_map.get(key);
+      return { ...e, ...lb_entry };
+    }).filter(e => e.overall_score !== undefined);
+    return { ...p, entries: enriched };
+  }).filter(p => p.entries.length > 0);
+
+  const rowH   = 48;
+  const barMaxW = 200;
+  const colW   = 260;
+  const labelW = 170;
+  const width  = labelW + families.length * colW + 20;
+  const headerH = 38;
+  const height = headerH + families.length * rowH + 80;
+
+  const svg = d3.create("svg")
+    .attr("width", width).attr("height", height)
+    .style("font-family","-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif")
+    .style("overflow","visible");
+
+  // === SCORE panel ===
+  // Header
+  svg.append("text")
+    .attr("x", labelW + barMaxW/2).attr("y", 16)
+    .attr("text-anchor","middle").attr("font-size",12).attr("font-weight",700)
+    .attr("fill","#e6edf3").text("Overall Score");
+  svg.append("text")
+    .attr("x", labelW + colW + barMaxW/2).attr("y", 16)
+    .attr("text-anchor","middle").attr("font-size",12).attr("font-weight",700)
+    .attr("fill","#e6edf3").text("Throughput (TPS)");
+
+  const scoreScale = d3.scaleLinear().domain([0,5]).range([0,barMaxW]);
+  const tpsMax = d3.max(families.flatMap(f=>f.entries.map(e=>e.avg_tps||0))) * 1.05;
+  const tpsScale = d3.scaleLinear().domain([0,tpsMax]).range([0,barMaxW]);
+
+  families.forEach((fam, fi) => {
+    const gy = headerH + fi * rowH;
+
+    // Family label
+    svg.append("text")
+      .attr("x", labelW - 8).attr("y", gy + rowH/2 + 5)
+      .attr("text-anchor","end").attr("font-size",11).attr("font-weight",600)
+      .attr("fill","#e6edf3").text(fam.family);
+
+    fam.entries.forEach((e, ei) => {
+      const barY = gy + 4 + ei * (rowH/2 - 2);
+      const bh   = rowH/2 - 6;
+
+      // Score bar
+      const sw = scoreScale(e.overall_score || 0);
+      svg.append("rect")
+        .attr("x", labelW).attr("y", barY).attr("width", sw).attr("height", bh)
+        .attr("rx",2).attr("fill", service_colors[e.service]).attr("opacity",0.8);
+      svg.append("text")
+        .attr("x", labelW + sw + 4).attr("y", barY + bh - 2)
+        .attr("font-size",9.5).attr("fill","#8b949e")
+        .text((e.overall_score||0).toFixed(2));
+
+      // Service label on left of bar
+      svg.append("text")
+        .attr("x", labelW + 4).attr("y", barY + bh - 2)
+        .attr("font-size",9).attr("fill","#0d1117").attr("font-weight",600)
+        .text(service_labels[e.service]);
+
+      // TPS bar
+      const tw = tpsScale(e.avg_tps || 0);
+      svg.append("rect")
+        .attr("x", labelW + colW).attr("y", barY).attr("width", tw).attr("height", bh)
+        .attr("rx",2).attr("fill", service_colors[e.service]).attr("opacity",0.6);
+      svg.append("text")
+        .attr("x", labelW + colW + tw + 4).attr("y", barY + bh - 2)
+        .attr("font-size",9.5).attr("fill","#8b949e")
+        .text((e.avg_tps||0).toFixed(0) + " t/s");
+    });
+
+    // Divider
+    if (fi < families.length - 1) {
+      svg.append("line")
+        .attr("x1",0).attr("x2",width)
+        .attr("y1",gy+rowH-1).attr("y2",gy+rowH-1)
+        .attr("stroke","#30363d");
+    }
+  });
+
+  // Legend
+  svcs.forEach((svc,i) => {
+    svg.append("rect")
+      .attr("x", labelW + i*95).attr("y", height-22)
+      .attr("width",11).attr("height",11).attr("rx",2)
+      .attr("fill",service_colors[svc]).attr("opacity",0.85);
+    svg.append("text")
+      .attr("x", labelW + i*95 + 14).attr("y",height-12)
+      .attr("font-size",11).attr("fill","#8b949e")
+      .text(service_labels[svc]);
+  });
+
+  return svg.node();
+}
+```
+
+```{=html}
+<div class="method-box" style="margin-top:1rem">
+  <strong>Key finding:</strong> Models in the same family score identically (or near-identically)
+  regardless of whether they run on GRIT or CIT — confirming that <em>model quality is infrastructure-independent</em>.
+  The meaningful differences are in <strong>throughput</strong> and <strong>latency</strong>,
+  which reflect the underlying hardware capacity of each service rather than model capability.
+  The GPT-OSS pair is an exception: the 120B parameter version on CIT outperforms the 20B version on GRIT,
+  but that reflects parameter count, not service quality.
+</div>
+```
+
+---
+
+## Per-Category Deep Dive
+
+```{=html}
+<p class="section-subheading">
+  Select a category to see how every model on every service scored, ordered from best to worst.
+</p>
+<div class="chart-card">
+```
+
+```{ojs}
+viewof selected_cat = Inputs.select(
+  ["code_generation","metadata_generation","literature_synthesis",
+   "data_interpretation","ocr","document_extraction","vision_qa"],
+  {
+    value: "code_generation",
+    label: "Category",
+    format: v => cat_labels_map[v]
+  }
+)
+```
+
+```{ojs}
+{
+  const rows = canonical_summary
+    .filter(d => d.category === selected_cat)
+    .map(d => ({ ...d, label: service_labels[d.service] + " / " + d.model }))
+    .sort((a,b) => b.avg_score - a.avg_score || b.avg_tps - a.avg_tps);
+
+  if (rows.length === 0)
+    return htl.html`<p style="color:#8b949e;padding:1rem">No data for this category.</p>`;
+
+  const width  = 760;
+  const barMaxW = 420;
+  const rowH   = 28;
+  const labelW = 280;
+  const height = rows.length * rowH + 60;
+
+  const xScore = d3.scaleLinear().domain([0,5]).range([0, barMaxW]);
+  const xTPS   = d3.scaleLinear()
+    .domain([0, d3.max(rows, d=>d.avg_tps)*1.05])
+    .range([0, 120]);
+
+  const svg = d3.create("svg")
+    .attr("width", width).attr("height", height)
+    .style("font-family","-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif")
+    .style("overflow","visible");
+
+  // Column headers
+  svg.append("text").attr("x", labelW + barMaxW/2).attr("y",14)
+   .attr("text-anchor","middle").attr("font-size",11).attr("fill","#8b949e")
+   .text("Avg Score  (1–5)");
+  svg.append("text").attr("x", labelW + barMaxW + 80).attr("y",14)
+   .attr("text-anchor","middle").attr("font-size",11).attr("fill","#8b949e")
+   .text("TPS");
+
+  rows.forEach((r, ri) => {
+    const y = 24 + ri * rowH;
+    const bh = rowH - 6;
+
+    // Alternating bg
+    if (ri % 2 === 0) {
+      svg.append("rect").attr("x",0).attr("y",y-1)
+       .attr("width",width).attr("height",rowH)
+       .attr("fill","rgba(255,255,255,0.015)").attr("rx",2);
+    }
+
+    // Model label
+    svg.append("text")
+      .attr("x", labelW - 8).attr("y", y + bh/2 + 4)
+      .attr("text-anchor","end").attr("font-size",10.5)
+      .attr("fill", service_colors[r.service])
+      .text(r.label.substring(0,42));
+
+    // Score bar
+    const sw = xScore(r.avg_score);
+    svg.append("rect")
+      .attr("x",labelW).attr("y",y+1).attr("width",sw).attr("height",bh-2)
+      .attr("rx",2).attr("fill",service_colors[r.service]).attr("opacity",0.75);
+    svg.append("text")
+      .attr("x", labelW + sw + 5).attr("y", y + bh/2 + 4)
+      .attr("font-size",10).attr("fill","#e6edf3")
+      .text(r.avg_score.toFixed(2));
+
+    // TPS mini bar
+    const tw = xTPS(r.avg_tps);
+    svg.append("rect")
+      .attr("x", labelW + barMaxW + 20).attr("y",y+1)
+      .attr("width",tw).attr("height",bh-2)
+      .attr("rx",2).attr("fill",service_colors[r.service]).attr("opacity",0.4);
+    svg.append("text")
+      .attr("x", labelW + barMaxW + 20 + tw + 4).attr("y", y + bh/2 + 4)
+      .attr("font-size",9.5).attr("fill","#6e7681")
+      .text(r.avg_tps.toFixed(0));
+  });
+
+  return svg.node();
+}
+```
+
+```{=html}
+</div>
+```
