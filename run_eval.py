@@ -70,27 +70,53 @@ def generate_summary_csv(json_path="results_log.json", csv_path="results_summary
     print(f"Summary saved to {csv_path}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Run LLM Evaluations for UCSB Services")
-    parser.add_argument("--test-run", action="store_true", help="Run a quick test with 1 task and limited models.")
-    parser.add_argument("--judge-service", type=str, default=DEFAULT_JUDGE_SERVICE, help=f"Service to use for the Judge LLM (default: {DEFAULT_JUDGE_SERVICE}).")
-    parser.add_argument("--judge-model", type=str, default=DEFAULT_JUDGE_MODEL, help=f"Model to use for the Judge LLM (default: {DEFAULT_JUDGE_MODEL}).")
+    parser = argparse.ArgumentParser(
+        description="Run LLM Evaluations for UCSB Services",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Available datasets:
+  eval_dataset.json            Standard v1 benchmark (text only)
+  eval_dataset_v2.json         Harder v2 benchmark (text only)
+  eval_dataset_multimodal.json OCR, document extraction, and vision QA (requires vision-capable models)
+
+Examples:
+  uv run python run_eval.py --dataset eval_dataset_v2.json
+  uv run python run_eval.py --dataset eval_dataset_multimodal.json --include-model-output
+  uv run python run_eval.py --dataset eval_dataset_v2.json --resume --include-model-output --include-judge-detail
+        """,
+    )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default="eval_dataset.json",
+        help="Path to the evaluation dataset JSON file (default: eval_dataset.json).",
+    )
+    parser.add_argument("--test-run", action="store_true", help="Run only the first task against a maximum of 2 models per service.")
+    parser.add_argument("--judge-service", type=str, default=DEFAULT_JUDGE_SERVICE, help=f"Service for the Judge LLM (default: {DEFAULT_JUDGE_SERVICE}).")
+    parser.add_argument("--judge-model", type=str, default=DEFAULT_JUDGE_MODEL, help=f"Model for the Judge LLM (default: {DEFAULT_JUDGE_MODEL}).")
     parser.add_argument("--force-all-models", action="store_true", help="Bypass the exclusion list and test all active models.")
-    parser.add_argument("--include-model-output", action="store_true", help="Include full target model responses in results log (for transparency).")
+    parser.add_argument("--include-model-output", action="store_true", help="Include full target model responses in results_log.json.")
     parser.add_argument("--include-judge-detail", action="store_true", help="Include full judge reasoning and rubric feedback (requires --include-model-output).")
-    parser.add_argument("--resume", action="store_true", help="Resume from last checkpoint: skip (service, model, test_id) triplets already in results_log.json.")
-    
+    parser.add_argument("--resume", action="store_true", help="Skip (service, model, test_id) triplets already recorded in results_log.json.")
+
     args = parser.parse_args()
-    
-    # Validate flag dependencies (Phase 4.3)
+
+    # Validate flag dependencies
     if args.include_judge_detail and not args.include_model_output:
         parser.error("--include-judge-detail requires --include-model-output")
-    
+
+    if not os.path.exists(args.dataset):
+        parser.error(f"Dataset file not found: '{args.dataset}'")
+
     print("=======================================")
-    print("Starting Evaluation Pipeline...")
+    print(f"Starting Evaluation Pipeline...")
+    print(f"  Dataset : {args.dataset}")
+    print(f"  Judge   : {args.judge_service} / {args.judge_model}")
     print("=======================================")
     run_evaluation(
-        test_run=args.test_run, 
-        judge_service=args.judge_service, 
+        dataset_path=args.dataset,
+        test_run=args.test_run,
+        judge_service=args.judge_service,
         judge_model=args.judge_model,
         force_all_models=args.force_all_models,
         include_model_output=args.include_model_output,

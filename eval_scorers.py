@@ -401,3 +401,238 @@ def score_with_judge(
             "output_type":  "json",
             "judge_model":  judge_model,
         }
+
+
+# ---------------------------------------------------------------------------
+# Multimodal scorers
+# ---------------------------------------------------------------------------
+
+def _normalize_field(v: str) -> str:
+    """Lowercase, strip whitespace, collapse multiple spaces, remove punctuation
+    that varies between OCR readings (commas in numbers, trailing periods)."""
+    v = str(v).lower().strip()
+    v = re.sub(r"\s+", " ", v)
+    return v
+
+
+def _field_match(extracted: str, expected: str, allow_partial: bool = True) -> bool:
+    """Loose field-level match for OCR comparison.
+
+    Handles:
+    - Case and whitespace differences
+    - Trailing/leading punctuation (periods, commas)
+    - Partial containment for long values (allow_partial=True)
+    - Numeric equivalence: "57.5" ≈ "57,5" (comma vs period decimal)
+    """
+    e = _normalize_field(extracted).strip(".,;")
+    x = _normalize_field(expected).strip(".,;")
+    # direct match
+    if e == x:
+        return True
+    # numeric: normalise decimal separators
+    e_num = e.replace(",", ".")
+    x_num = x.replace(",", ".")
+    if e_num == x_num:
+        return True
+    # partial containment (useful for long cell values)
+    if allow_partial and (x in e or e in x):
+        return True
+    return False
+
+
+def score_ocr_table(
+    response_text: str,
+    ground_truth_rows: list[dict],
+    key_fields: list[str],
+    include_output: bool = False,
+) -> dict:
+    """Score an OCR table extraction against a ground-truth row list.
+
+    This scorer is designed for structured table extraction from images
+    (e.g. a 19th-century meteorological table). It does NOT re-execute code —
+    it parses the model's text output and compares against known ground truth.
+
+    The model is expected to output either:
+    - A JSON array of row objects, OR
+    - A markdown table (which we parse into rows)
+
+    Scoring rubric:
+        - Computes per-field accuracy across all rows × key_fields
+        - Maps accuracy to 1–5 scale:
+            5/5  ≥ 90% fields correct
+            4/5  ≥ 70%
+            3/5  ≥ 50%
+            2/5  ≥ 30%
+            1/5  < 30% (or unparseable output)
+
+    Args:
+        response_text:     The model's raw response string.
+        ground_truth_rows: List of dicts, one per expected table row.
+                           Keys must include all entries in key_fields.
+        key_fields:        Which dict keys to check (subset of ground_truth_rows keys).
+        include_output:    Whether to include model_output in the result.
+    """
+    text = response_text.strip()
+    n_rows = len(ground_truth_rows)
+    n_fields = len(key_fields)
+    total_checks = n_rows * n_fields
+
+    # ── Step 1: Try to parse the model response into rows ─────────────────
+    extracted_rows: list[dict] = []
+
+    # Attempt 1: JSON array
+    try:
+        cleaned = extract_code_block(text)
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, list) and len(parsed) > 0 and isinstance(parsed[0], dict):
+            extracted_rows = parsed
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+    # Attempt 2: Markdown table  (| col1 | col2 | ... |)
+    if not extracted_rows:
+        md_rows = []
+        headers: list[str] = []
+        for line in text.splitlines():
+            line = line.strip()
+            if not line.startswith("|"):
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if all(re.match(r"^[-:]+$", c) for c in cells if c):
+                continue  # separator row
+            if not headers:
+                headers = [c.lower().replace(" ", "_") for c in cells]
+            else:
+                if len(cells) == len(headers):
+                    md_rows.append(dict(zip(headers, cells)))
+        extracted_rows = md_rows
+
+    # If still nothing parseable, return score 1
+    if not extracted_rows:
+        d = {
+            "score":  1,
+            "reason": "Could not parse any rows from the model output (not JSON array or markdown table).",
+            "ocr_accuracy": 0.0,
+            "fields_correct": 0,
+            "fields_total": total_checks,
+        }
+        if include_output:
+            d["model_output"] = text
+            d["output_type"]  = "ocr_table"
+        return d
+
+    # ── Step 2: Align extracted rows to ground-truth rows ─────────────────
+    # Use the first key_field as an anchor for row matching (e.g. "epoca" / time-of-day).
+    # For each ground-truth row, find the best-matching extracted row.
+    anchor = key_fields[0]
+    fields_correct = 0
+
+    for gt_row in ground_truth_rows:
+        gt_anchor_val = gt_row.get(anchor, "")
+        # Find best matching extracted row by anchor field
+        best_row = None
+        for ex_row in extracted_rows:
+            # Try all key variations of the anchor
+            for k, v in ex_row.items():
+                if _field_match(str(v), gt_anchor_val):
+                    best_row = ex_row
+                    break
+            if best_row:
+                break
+
+        if best_row is None:
+            # No row matched by anchor: check all key_fields against all extracted values
+            # (model may have used different key names)
+            all_extracted_vals = " | ".join(str(v) for v in best_row.values()) if best_row else ""
+        else:
+            all_extracted_vals = " | ".join(str(v) for v in best_row.values())
+
+        for field in key_fields:
+            expected_val = str(gt_row.get(field, ""))
+            if best_row is None:
+                # Row not found — check if the value appears anywhere in the full response
+                if _field_match(text, expected_val, allow_partial=True):
+                    fields_correct += 1
+                # else 0
+            else:
+                # Check the matched row's value for this field
+                extracted_val = ""
+                for k, v in best_row.items():
+                    if field in k.lower() or k.lower() in field:
+                        extracted_val = str(v)
+                        break
+                if not extracted_val:
+                    # Key name didn't match — try positional (nth field in row)
+                    row_vals = list(best_row.values())
+                    gt_vals  = list(gt_row.values())
+                    if field in gt_row:
+                        field_idx = list(gt_row.keys()).index(field)
+                        if field_idx < len(row_vals):
+                            extracted_val = str(row_vals[field_idx])
+
+                if _field_match(extracted_val, expected_val):
+                    fields_correct += 1
+
+    accuracy = fields_correct / total_checks if total_checks > 0 else 0.0
+
+    # ── Step 3: Map accuracy to score ────────────────────────────────────
+    if accuracy >= 0.90:
+        score, grade = 5, "excellent"
+    elif accuracy >= 0.70:
+        score, grade = 4, "good"
+    elif accuracy >= 0.50:
+        score, grade = 3, "partial"
+    elif accuracy >= 0.30:
+        score, grade = 2, "poor"
+    else:
+        score, grade = 1, "very poor"
+
+    d = {
+        "score":          score,
+        "reason":         (
+            f"OCR table accuracy: {accuracy:.0%} ({fields_correct}/{total_checks} fields correct — {grade}). "
+            f"Extracted {len(extracted_rows)} row(s), expected {n_rows}."
+        ),
+        "ocr_accuracy":   round(accuracy, 4),
+        "fields_correct": fields_correct,
+        "fields_total":   total_checks,
+    }
+    if include_output:
+        d["model_output"] = text
+        d["output_type"]  = "ocr_table"
+    return d
+
+
+def score_document_extraction(
+    response_text: str,
+    judge_client: OpenAI,
+    judge_model: str,
+    prompt: str,
+    rubric: str,
+    tracker,
+    include_detail: bool = False,
+) -> dict:
+    """Score non-deterministic structured extraction from a document image.
+
+    Used for tasks where the content is not known in advance (e.g. the back of
+    a historical catalogue card) and cannot be verified programmatically.
+    Delegates to the LLM judge with a rubric focused on:
+      - Presence of expected structural elements (fields, sections)
+      - Internal consistency of extracted values
+      - Absence of hallucinated content
+
+    This is a thin wrapper around score_with_judge that sets the output_type
+    to 'document_extraction' for dashboard filtering.
+    """
+    result = score_with_judge(
+        target_response=response_text,
+        prompt=prompt,
+        rubric=rubric,
+        judge_client=judge_client,
+        judge_model=judge_model,
+        tracker=tracker,
+        include_detail=include_detail,
+    )
+    # Override output_type for dashboard filtering
+    result["output_type"] = "document_extraction"
+    return result

@@ -7,69 +7,122 @@ from io import BytesIO
 from PIL import Image
 from config import SERVICES
 from eval_config import TARGET_SERVICES, DEFAULT_JUDGE_SERVICE, DEFAULT_JUDGE_MODEL, SERVICE_BUDGETS, EXCLUDED_MODELS
-from eval_scorers import score_programmatic_code, score_programmatic_metadata, score_exact_match, score_with_judge
+from eval_scorers import (
+    score_programmatic_code,
+    score_programmatic_metadata,
+    score_exact_match,
+    score_with_judge,
+    score_ocr_table,
+    score_document_extraction,
+)
 from token_tracker import TokenTracker
 from openai import OpenAI
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 # Default budget used when a service is not listed in SERVICE_BUDGETS.
-# Set conservatively so an unconfigured service won't silently consume tokens.
 _DEFAULT_BUDGET = 500_000
 
-# How many times to retry a failed API call before recording it as an error.
+# Retry settings
 _MAX_RETRIES = 2
-# Base delay in seconds between retries (doubles each attempt).
 _RETRY_BASE_DELAY = 5
 
+# Categories that require image input — used to skip non-vision models gracefully.
+_VISION_CATEGORIES = {"ocr", "vision_qa", "document_extraction"}
+
+# Known model name fragments that identify vision-capable models.
+# If a task requires vision and the model does NOT match any of these,
+# it is skipped with a clear log message rather than failing with an API error.
+_VISION_MODEL_HINTS = [
+    "llava", "llava-phi", "moondream", "bakllava",   # Ollama vision
+    "vision", "vl", "multimodal",                     # generic hints
+    "gpt-4o", "gpt-4-vision",                         # OpenAI
+    "claude-3", "claude-4",                           # Anthropic (all support vision)
+    "gemini",                                          # Google (all support vision)
+    "pixtral", "mistral-large",                       # Mistral vision models
+    "phi-3-vision", "phi-4", "phi4",                  # Microsoft Phi vision
+    "qwen-vl", "qwen2-vl", "internvl",               # Qwen/InternVL vision
+    "idefics",                                         # HuggingFace vision
+    "all-the-things",                                  # UCSB multi-capability model
+]
+
+
+# ---------------------------------------------------------------------------
+# Image helpers
+# ---------------------------------------------------------------------------
+
 def encode_image_to_base64(image_path: str, max_size: int = 1024) -> str:
-    """Reads an image, resizes it if it exceeds max_size, and encodes it to a base64 string.
-    This prevents '413 Request Entity Too Large' errors from API gateways."""
+    """Read an image, resize if too large, and return a base64-encoded JPEG string.
+
+    Resizing to max_size prevents '413 Request Entity Too Large' errors from
+    API gateways. Converts RGBA/P images to RGB before JPEG encoding.
+    """
     with Image.open(image_path) as img:
-        # Convert to RGB if it has an alpha channel (JPEG doesn't support alpha)
         if img.mode in ("RGBA", "P"):
             img = img.convert("RGB")
-        
-        # Calculate aspect ratio
-        width, height = img.size
-        if width > max_size or height > max_size:
-            if width > height:
-                new_width = max_size
-                new_height = int(max_size * (height / width))
+        w, h = img.size
+        if w > max_size or h > max_size:
+            if w > h:
+                new_w, new_h = max_size, int(max_size * h / w)
             else:
-                new_height = max_size
-                new_width = int(max_size * (width / height))
-            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-            
-        buffered = BytesIO()
-        # Save as high-quality JPEG to significantly reduce base64 size compared to PNG
-        img.save(buffered, format="JPEG", quality=85)
-        return base64.b64encode(buffered.getvalue()).decode('utf-8')
+                new_h, new_w = max_size, int(max_size * w / h)
+            img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        buf = BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        return base64.b64encode(buf.getvalue()).decode("utf-8")
+
+
+def _is_vision_model(model_id: str) -> bool:
+    """Heuristic: return True if the model name suggests vision capability."""
+    lower = model_id.lower()
+    return any(hint in lower for hint in _VISION_MODEL_HINTS)
+
+
+def _build_message_content(test_case: dict) -> str | list:
+    """Build the message content for a chat completion call.
+
+    For text-only tasks returns a plain string.
+    For tasks with an image_path, returns the multimodal content list
+    (text + base64-encoded image) following the OpenAI vision API format.
+    """
+    image_path = test_case.get("image_path")
+    if not image_path:
+        return test_case["prompt"]
+
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(
+            f"Image not found: '{image_path}'. "
+            f"Ensure the path is relative to the project root."
+        )
+
+    b64 = encode_image_to_base64(image_path)
+    return [
+        {"type": "text", "text": test_case["prompt"]},
+        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+    ]
+
+
+# ---------------------------------------------------------------------------
+# API helpers
+# ---------------------------------------------------------------------------
 
 def get_client(service_name: str) -> OpenAI:
     config = SERVICES.get(service_name)
     if not config or not config.get("key"):
-        raise ValueError(f"Service {service_name} is missing or has no API key.")
+        raise ValueError(f"Service '{service_name}' is missing or has no API key.")
     return OpenAI(
         base_url=config.get("url"),
         api_key=config.get("key"),
-        timeout=120.0
+        timeout=120.0,
     )
 
 
 def _call_with_retry(client: OpenAI, model_id: str, messages: list) -> object:
-    """Calls the chat completions API with simple exponential-backoff retry.
-
-    Returns the response object on success, or raises the last exception after
-    all retries are exhausted.
-    """
+    """Chat completion call with exponential-backoff retry."""
     last_exc = None
     for attempt in range(_MAX_RETRIES + 1):
         try:
-            return client.chat.completions.create(
-                model=model_id,
-                messages=messages
-            )
+            return client.chat.completions.create(model=model_id, messages=messages)
         except Exception as exc:
             last_exc = exc
             if attempt < _MAX_RETRIES:
@@ -82,11 +135,11 @@ def _call_with_retry(client: OpenAI, model_id: str, messages: list) -> object:
     raise last_exc
 
 
-def _load_existing_results(path: str) -> list:
-    """Loads an existing results log so new runs can be appended to it.
+# ---------------------------------------------------------------------------
+# Results log helpers
+# ---------------------------------------------------------------------------
 
-    Returns an empty list if the file doesn't exist or is not valid JSON.
-    """
+def _load_existing_results(path: str) -> list:
     try:
         with open(path, "r") as f:
             data = json.load(f)
@@ -98,34 +151,28 @@ def _load_existing_results(path: str) -> list:
 
 
 def _make_run_key(entry: dict) -> str:
-    """Unique key that identifies a (service, model, test_id) combination."""
     return f"{entry['service']}::{entry['model']}::{entry['test_id']}"
 
 
 def _append_result(result: dict, log_path: str = "results_log.json") -> None:
-    """Atomically append a single result to the results log (Phase 4.1).
-
-    Reads existing log, appends new result, writes back.
-    Handles race conditions by checking for duplicate (service, model, test_id).
-    This ensures durability: each result is written immediately after scoring,
-    so connection drops don't lose data.
-    """
+    """Atomically append one result — idempotent on duplicate keys."""
     try:
         existing = _load_existing_results(log_path)
         run_key = _make_run_key(result)
-
-        # Avoid duplicates (idempotent)
         if not any(_make_run_key(r) == run_key for r in existing):
             existing.append(result)
-            with open(log_path, 'w') as f:
+            with open(log_path, "w") as f:
                 json.dump(existing, f, indent=2)
     except Exception as e:
         logging.error(f"Failed to append result to {log_path}: {e}")
-        # Don't crash the entire run if disk write fails; log and continue
-        # (the result is still in memory and will be retried on next write attempt)
 
+
+# ---------------------------------------------------------------------------
+# Main evaluation loop
+# ---------------------------------------------------------------------------
 
 def run_evaluation(
+    dataset_path: str = "eval_dataset.json",
     test_run: bool = False,
     judge_service: str = DEFAULT_JUDGE_SERVICE,
     judge_model: str = DEFAULT_JUDGE_MODEL,
@@ -138,148 +185,261 @@ def run_evaluation(
 
     # 1. Load Dataset
     try:
-        with open("eval_dataset_v2.json", "r") as f:
+        with open(dataset_path, "r") as f:
             dataset = json.load(f)
+        logging.info(f"Loaded {len(dataset)} task(s) from '{dataset_path}'")
     except Exception as e:
-        logging.error(f"Failed to load dataset: {e}")
+        logging.error(f"Failed to load dataset '{dataset_path}': {e}")
         return
 
     if test_run:
-        dataset = dataset[-2:]  # Just run the last two tests (vision) for test mode
-        logging.info("TEST RUN MODE: Only running 2 test cases.")
+        dataset = dataset[:1]
+        logging.info("TEST RUN MODE: Only running first task.")
+
+    # Detect whether any task in this dataset requires vision
+    dataset_needs_vision = any(
+        t.get("category") in _VISION_CATEGORIES or t.get("image_path")
+        for t in dataset
+    )
 
     # 2. Initialize Judge Client
-    logging.info(f"Initializing Judge Client: {judge_service} / {judge_model}")
+    logging.info(f"Initializing Judge: {judge_service} / {judge_model}")
     try:
         judge_client = get_client(judge_service)
     except Exception as e:
         logging.error(f"Failed to initialize judge: {e}")
         return
 
-    # 3. Load existing results and build a set of already-completed run keys
+    # 3. Load existing results / resume
     results_log_path = "results_log.json"
-    completed_keys = set()
+    completed_keys: set[str] = set()
 
     if resume:
-        logging.info("RESUME MODE: Loading existing results and skipping completed triplets.")
-        existing_results = _load_existing_results(results_log_path)
-        completed_keys = {_make_run_key(r) for r in existing_results}
-        logging.info(f"  Found {len(completed_keys)} already-completed triplets.")
+        logging.info("RESUME MODE: skipping already-completed triplets.")
+        existing = _load_existing_results(results_log_path)
+        completed_keys = {_make_run_key(r) for r in existing}
+        logging.info(f"  Found {len(completed_keys)} completed triplet(s).")
     else:
-        # Fresh run: log what we're doing
         if os.path.exists(results_log_path) and not test_run:
-            logging.info("Fresh run: appending to existing results_log.json (use --resume to skip completed entries)")
+            logging.info(
+                "Fresh run: appending to existing results_log.json "
+                "(use --resume to skip already-completed entries)"
+            )
 
     new_results_count = 0
 
     # 4. Iterate Target Services
-    for target_service_name in TARGET_SERVICES:
-        logging.info(f"\n--- Evaluating Service: {target_service_name} ---")
+    for svc_name in TARGET_SERVICES:
+        logging.info(f"\n--- Evaluating Service: {svc_name} ---")
 
-        # Guard against services missing from SERVICE_BUDGETS
-        service_budget = SERVICE_BUDGETS.get(target_service_name, _DEFAULT_BUDGET)
-
-        if not tracker.check_budget(target_service_name, service_budget):
-            logging.warning(f"Skipping {target_service_name} due to budget limits.")
+        service_budget = SERVICE_BUDGETS.get(svc_name, _DEFAULT_BUDGET)
+        if not tracker.check_budget(svc_name, service_budget):
+            logging.warning(f"Skipping {svc_name} — budget limit reached.")
             continue
 
         try:
-            target_client = get_client(target_service_name)
-            models_page = target_client.models.list()
-            active_models = [m.id for m in models_page.data]
+            target_client = get_client(svc_name)
+            active_models = [m.id for m in target_client.models.list().data]
         except Exception as e:
-            logging.error(f"Failed to connect to {target_service_name}: {e}")
+            logging.error(f"Failed to connect to {svc_name}: {e}")
             continue
 
-        if test_run:
-            active_models = active_models[:2]
-
-        # 5. Iterate Models & Prompts
+        # 5. Iterate Models
         evaluated_count = 0
         for model_id in active_models:
             if not force_all_models:
                 if model_id in EXCLUDED_MODELS:
-                    logging.info(f"  Skipping Model: {model_id} (in exclusion list)")
+                    logging.info(f"  Skipping {model_id} (exclusion list)")
                     continue
                 if any(x in model_id.lower() for x in ["embedding", "reranker", "cloud"]):
-                    logging.info(f"  Skipping Model: {model_id} (matches exclusion pattern)")
+                    logging.info(f"  Skipping {model_id} (exclusion pattern)")
+                    continue
+
+            # Graceful skip: if the dataset has vision tasks and this model
+            # doesn't appear to support images, skip the whole model.
+            if dataset_needs_vision and not _is_vision_model(model_id):
+                # Only skip the model entirely if ALL tasks in the dataset require vision.
+                # If the dataset is mixed (text + vision), we skip only the vision tasks below.
+                all_vision = all(
+                    t.get("category") in _VISION_CATEGORIES or t.get("image_path")
+                    for t in dataset
+                )
+                if all_vision:
+                    logging.info(
+                        f"  Skipping {model_id} — vision-only dataset and "
+                        f"model does not appear vision-capable."
+                    )
                     continue
 
             logging.info(f"  Testing Model: {model_id}")
             evaluated_count += 1
 
             for test_case in dataset:
-                run_key = f"{target_service_name}::{model_id}::{test_case['id']}"
+                run_key = f"{svc_name}::{model_id}::{test_case['id']}"
 
-                # Skip if this exact (service, model, test) was already recorded
                 if run_key in completed_keys:
-                    logging.info(f"    Skipping {test_case['id']} — already in results log.")
+                    logging.info(f"    Skipping {test_case['id']} — already recorded.")
+                    continue
+
+                # Per-task vision skip: if this specific task needs vision
+                # and the model doesn't support it, record a clean skip entry.
+                task_needs_vision = (
+                    test_case.get("category") in _VISION_CATEGORIES
+                    or bool(test_case.get("image_path"))
+                )
+                if task_needs_vision and not _is_vision_model(model_id):
+                    logging.info(
+                        f"    Skipping {test_case['id']} for {model_id} "
+                        f"— vision task, model not vision-capable."
+                    )
+                    skip_entry = {
+                        "service": svc_name, "model": model_id,
+                        "test_id": test_case["id"], "category": test_case["category"],
+                        "latency_sec": 0, "tps": 0,
+                        "prompt_tokens": 0, "completion_tokens": 0,
+                        "score": 0,
+                        "reason": "Skipped: task requires vision but model does not support image input.",
+                    }
+                    _append_result(skip_entry)
+                    completed_keys.add(run_key)
                     continue
 
                 logging.info(f"    Task: {test_case['category']} ({test_case['id']})")
 
                 start_time = time.time()
                 try:
-                    # Construct message payload, handling multimodality if image_path is present
-                    if "image_path" in test_case and test_case["image_path"]:
-                        base64_img = encode_image_to_base64(test_case["image_path"])
-                        # We are converting everything to JPEG in the encoding function
-                        mime_type = "image/jpeg"
-                        
-                        message_content = [
-                            {"type": "text", "text": test_case['prompt']},
-                            {
-                                "type": "image_url",
-                                "image_url": {"url": f"data:{mime_type};base64,{base64_img}"}
-                            }
-                        ]
-                    else:
-                        message_content = test_case['prompt']
-
+                    message_content = _build_message_content(test_case)
                     response = _call_with_retry(
-                        target_client,
-                        model_id,
-                        [{"role": "user", "content": message_content}]
+                        target_client, model_id,
+                        [{"role": "user", "content": message_content}],
                     )
                     latency = time.time() - start_time
 
                     target_text = response.choices[0].message.content
+                    tracker.add_usage(svc_name, model_id, response.usage, autosave=False)
 
-                    # Track target token usage (flushed to disk after full model loop)
-                    tracker.add_usage(target_service_name, model_id, response.usage, autosave=False)
-
-                    # Pull token counts for the richer log entry
-                    prompt_tokens = getattr(response.usage, 'prompt_tokens', 0)
-                    completion_tokens = getattr(response.usage, 'completion_tokens', 0)
+                    prompt_tokens     = getattr(response.usage, "prompt_tokens", 0)
+                    completion_tokens = getattr(response.usage, "completion_tokens", 0)
                     tps = completion_tokens / latency if latency > 0 else 0
 
-                    # 6. Score the Response (Phase 4.2: pass include_* flags)
+                    # 6. Score the Response
                     score_result = {"score": 0, "reason": "Scorer not matched"}
+                    category = test_case["category"]
 
-                    if test_case['category'] == "code_generation":
+                    if category == "code_generation":
                         score_result = score_programmatic_code(
                             target_text,
-                            dummy_csv=test_case.get("dummy_csv", "temperature,pressure\n15,1000\n25,1010\n30,1020\n"),
+                            dummy_csv=test_case.get(
+                                "dummy_csv",
+                                "temperature,pressure\n15,1000\n25,1010\n30,1020\n",
+                            ),
                             expected_output=test_case.get("expected_output"),
                             include_output=include_model_output,
                         )
-                    elif test_case['category'] == "metadata_generation":
+
+                    elif category == "metadata_generation":
                         score_result = score_programmatic_metadata(
                             target_text,
-                            test_case['expected_schema_keys'],
+                            test_case["expected_schema_keys"],
                             expected_values=test_case.get("expected_values"),
                             include_output=include_model_output,
                         )
-                    elif test_case['category'] in ["data_interpretation", "vision_qa"]:
-                        score_result = score_exact_match(target_text, test_case['expected_exact_match'], include_output=include_model_output)
-                    elif test_case['category'] in ["literature_synthesis", "ocr"]:
-                        # Guard against judge service missing from SERVICE_BUDGETS
+
+                    elif category == "data_interpretation":
+                        score_result = score_exact_match(
+                            target_text,
+                            test_case["expected_exact_match"],
+                            include_output=include_model_output,
+                        )
+
+                    elif category == "vision_qa":
+                        # Some vision_qa tasks have a deterministic answer;
+                        # others use expected_exact_match == "judge" to fall through.
+                        expected = test_case.get("expected_exact_match", "")
+                        if expected and expected.lower() != "judge":
+                            score_result = score_exact_match(
+                                target_text, expected,
+                                include_output=include_model_output,
+                            )
+                        else:
+                            # Non-deterministic vision QA → judge
+                            judge_budget = SERVICE_BUDGETS.get(judge_service, _DEFAULT_BUDGET)
+                            if tracker.check_budget(judge_service, judge_budget):
+                                score_result = score_with_judge(
+                                    target_response=target_text,
+                                    prompt=test_case["prompt"],
+                                    rubric=test_case.get("judge_rubric", "Score 1-5 for accuracy."),
+                                    judge_client=judge_client,
+                                    judge_model=judge_model,
+                                    tracker=tracker,
+                                    include_detail=include_judge_detail,
+                                )
+                                if "judge_usage" in score_result:
+                                    tracker.add_usage(judge_service, judge_model, score_result.pop("judge_usage"), autosave=False)
+                            else:
+                                score_result = {"score": 0, "reason": "Judge budget exceeded."}
+
+                    elif category == "ocr":
+                        ground_truth = test_case.get("ground_truth_rows", [])
+                        key_fields   = test_case.get("key_fields", [])
+                        if ground_truth and key_fields:
+                            # Deterministic OCR table — use programmatic scorer
+                            score_result = score_ocr_table(
+                                target_text,
+                                ground_truth_rows=ground_truth,
+                                key_fields=key_fields,
+                                include_output=include_model_output,
+                            )
+                            # If programmatic score is low, supplement with a judge check
+                            if score_result["score"] < 4:
+                                judge_budget = SERVICE_BUDGETS.get(judge_service, _DEFAULT_BUDGET)
+                                if tracker.check_budget(judge_service, judge_budget):
+                                    judge_result = score_with_judge(
+                                        target_response=target_text,
+                                        prompt=test_case["prompt"],
+                                        rubric=test_case.get("judge_rubric", "Score 1-5 for OCR accuracy."),
+                                        judge_client=judge_client,
+                                        judge_model=judge_model,
+                                        tracker=tracker,
+                                        include_detail=include_judge_detail,
+                                    )
+                                    if "judge_usage" in judge_result:
+                                        tracker.add_usage(judge_service, judge_model, judge_result.pop("judge_usage"), autosave=False)
+                                    # Take the higher of the two scores (benefit of the doubt)
+                                    if judge_result["score"] > score_result["score"]:
+                                        score_result["score"]  = judge_result["score"]
+                                        score_result["reason"] = (
+                                            f"[Programmatic: {score_result['reason'][:60]}] "
+                                            f"[Judge: {judge_result['reason']}]"
+                                        )
+                                        for k in ("judge_reasoning", "judge_rubric_feedback", "judge_model"):
+                                            if k in judge_result:
+                                                score_result[k] = judge_result[k]
+                        else:
+                            # No ground truth — pure judge evaluation
+                            judge_budget = SERVICE_BUDGETS.get(judge_service, _DEFAULT_BUDGET)
+                            if tracker.check_budget(judge_service, judge_budget):
+                                score_result = score_with_judge(
+                                    target_response=target_text,
+                                    prompt=test_case["prompt"],
+                                    rubric=test_case.get("judge_rubric", "Score 1-5 for OCR accuracy."),
+                                    judge_client=judge_client,
+                                    judge_model=judge_model,
+                                    tracker=tracker,
+                                    include_detail=include_judge_detail,
+                                )
+                                if "judge_usage" in score_result:
+                                    tracker.add_usage(judge_service, judge_model, score_result.pop("judge_usage"), autosave=False)
+                            else:
+                                score_result = {"score": 0, "reason": "Judge budget exceeded."}
+
+                    elif category == "literature_synthesis":
                         judge_budget = SERVICE_BUDGETS.get(judge_service, _DEFAULT_BUDGET)
                         if tracker.check_budget(judge_service, judge_budget):
                             score_result = score_with_judge(
                                 target_response=target_text,
-                                prompt=test_case['prompt'],
-                                rubric=test_case['judge_rubric'],
+                                prompt=test_case["prompt"],
+                                rubric=test_case["judge_rubric"],
                                 judge_client=judge_client,
                                 judge_model=judge_model,
                                 tracker=tracker,
@@ -288,56 +448,70 @@ def run_evaluation(
                             if "judge_usage" in score_result:
                                 tracker.add_usage(judge_service, judge_model, score_result.pop("judge_usage"), autosave=False)
                         else:
-                            score_result = {"score": 0, "reason": "Judge budget exceeded. Evaluation skipped."}
+                            score_result = {"score": 0, "reason": "Judge budget exceeded."}
 
-                    # Build richer log entry (Phase 4.4: optional fields)
+                    elif category == "document_extraction":
+                        judge_budget = SERVICE_BUDGETS.get(judge_service, _DEFAULT_BUDGET)
+                        if tracker.check_budget(judge_service, judge_budget):
+                            score_result = score_document_extraction(
+                                response_text=target_text,
+                                judge_client=judge_client,
+                                judge_model=judge_model,
+                                prompt=test_case["prompt"],
+                                rubric=test_case.get("judge_rubric", "Score 1-5 for extraction completeness and accuracy."),
+                                tracker=tracker,
+                                include_detail=include_judge_detail,
+                            )
+                            if "judge_usage" in score_result:
+                                tracker.add_usage(judge_service, judge_model, score_result.pop("judge_usage"), autosave=False)
+                        else:
+                            score_result = {"score": 0, "reason": "Judge budget exceeded."}
+
+                    # 7. Build log entry
                     log_entry = {
-                        "service": target_service_name,
-                        "model": model_id,
-                        "test_id": test_case['id'],
-                        "category": test_case['category'],
-                        "latency_sec": round(latency, 2),
-                        "tps": round(tps, 2),
-                        "prompt_tokens": prompt_tokens,
+                        "service":           svc_name,
+                        "model":             model_id,
+                        "test_id":           test_case["id"],
+                        "category":          category,
+                        "latency_sec":       round(latency, 2),
+                        "tps":               round(tps, 2),
+                        "prompt_tokens":     prompt_tokens,
                         "completion_tokens": completion_tokens,
-                        "score": score_result["score"],
-                        "reason": score_result["reason"],
+                        "score":             score_result["score"],
+                        "reason":            score_result["reason"],
                     }
-
-                    # Add optional transparency fields
-                    if "model_output" in score_result:
-                        log_entry["model_output"] = score_result["model_output"]
-                    if "output_type" in score_result:
-                        log_entry["output_type"] = score_result["output_type"]
-                    if "judge_reasoning" in score_result:
-                        log_entry["judge_reasoning"] = score_result["judge_reasoning"]
-                    if "judge_rubric_feedback" in score_result:
-                        log_entry["judge_rubric_feedback"] = score_result["judge_rubric_feedback"]
-                    if "judge_model" in score_result:
-                        log_entry["judge_model"] = score_result["judge_model"]
-                    # code execution stdout (stored as 'output' in scorer result)
+                    # Optional transparency fields
+                    for key in ("model_output", "output_type", "judge_reasoning",
+                                "judge_rubric_feedback", "judge_model",
+                                "ocr_accuracy", "fields_correct", "fields_total"):
+                        if key in score_result:
+                            log_entry[key] = score_result[key]
+                    # Code execution stdout
                     if "output" in score_result:
                         log_entry["code_output"] = score_result["output"]
 
-                    # Append immediately (Phase 4.1: per-task durability)
                     _append_result(log_entry)
                     completed_keys.add(run_key)
                     new_results_count += 1
 
-                    logging.info(f"      -> Score: {score_result['score']}/5 | TPS: {round(tps, 2)}")
+                    logging.info(
+                        f"      -> Score: {score_result['score']}/5 | TPS: {round(tps, 2)}"
+                    )
 
                 except Exception as e:
-                    logging.error(f"      -> Error testing {model_id} on {test_case['id']}: {e}")
+                    logging.error(
+                        f"      -> Error on {model_id} / {test_case['id']}: {e}"
+                    )
 
-            # Flush accumulated token usage to disk once per model
+            # Flush token tracker once per model
             tracker.save()
 
             if test_run and evaluated_count >= 2:
-                logging.info(f"  Reached max 2 models for test run on {target_service_name}")
+                logging.info(f"  Reached test-run limit for {svc_name}.")
                 break
 
-    # 7. Final Summary
+    # 8. Final summary
     logging.info(f"\n{'='*50}")
-    logging.info(f"Evaluation complete. {new_results_count} new result(s) recorded.")
-    logging.info(f"All results saved to {results_log_path}")
+    logging.info(f"Evaluation complete — {new_results_count} new result(s) recorded.")
+    logging.info(f"Results saved to '{results_log_path}'")
     logging.info(f"{'='*50}")
