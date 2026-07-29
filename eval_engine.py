@@ -1,6 +1,7 @@
 import json
 import time
 import logging
+import os
 from config import SERVICES
 from eval_config import TARGET_SERVICES, DEFAULT_JUDGE_SERVICE, DEFAULT_JUDGE_MODEL, SERVICE_BUDGETS, EXCLUDED_MODELS
 from eval_scorers import score_programmatic_code, score_programmatic_metadata, score_exact_match, score_with_judge
@@ -75,11 +76,37 @@ def _make_run_key(entry: dict) -> str:
     return f"{entry['service']}::{entry['model']}::{entry['test_id']}"
 
 
+def _append_result(result: dict, log_path: str = "results_log.json") -> None:
+    """Atomically append a single result to the results log (Phase 4.1).
+
+    Reads existing log, appends new result, writes back.
+    Handles race conditions by checking for duplicate (service, model, test_id).
+    This ensures durability: each result is written immediately after scoring,
+    so connection drops don't lose data.
+    """
+    try:
+        existing = _load_existing_results(log_path)
+        run_key = _make_run_key(result)
+
+        # Avoid duplicates (idempotent)
+        if not any(_make_run_key(r) == run_key for r in existing):
+            existing.append(result)
+            with open(log_path, 'w') as f:
+                json.dump(existing, f, indent=2)
+    except Exception as e:
+        logging.error(f"Failed to append result to {log_path}: {e}")
+        # Don't crash the entire run if disk write fails; log and continue
+        # (the result is still in memory and will be retried on next write attempt)
+
+
 def run_evaluation(
     test_run: bool = False,
     judge_service: str = DEFAULT_JUDGE_SERVICE,
     judge_model: str = DEFAULT_JUDGE_MODEL,
-    force_all_models: bool = False
+    force_all_models: bool = False,
+    include_model_output: bool = False,
+    include_judge_detail: bool = False,
+    resume: bool = False,
 ):
     tracker = TokenTracker()
 
@@ -103,18 +130,27 @@ def run_evaluation(
         logging.error(f"Failed to initialize judge: {e}")
         return
 
-    # 3. Load existing results and build a set of already-completed run keys so we
-    #    never overwrite a previously recorded result (append / merge behaviour).
+    # 3. Load existing results and build a set of already-completed run keys
     results_log_path = "results_log.json"
-    results_log = _load_existing_results(results_log_path)
-    completed_keys = {_make_run_key(r) for r in results_log}
+    completed_keys = set()
+
+    if resume:
+        logging.info("RESUME MODE: Loading existing results and skipping completed triplets.")
+        existing_results = _load_existing_results(results_log_path)
+        completed_keys = {_make_run_key(r) for r in existing_results}
+        logging.info(f"  Found {len(completed_keys)} already-completed triplets.")
+    else:
+        # Fresh run: log what we're doing
+        if os.path.exists(results_log_path) and not test_run:
+            logging.info("Fresh run: appending to existing results_log.json (use --resume to skip completed entries)")
+
     new_results_count = 0
 
     # 4. Iterate Target Services
     for target_service_name in TARGET_SERVICES:
         logging.info(f"\n--- Evaluating Service: {target_service_name} ---")
 
-        # Guard against services missing from SERVICE_BUDGETS (1.2 fix)
+        # Guard against services missing from SERVICE_BUDGETS
         service_budget = SERVICE_BUDGETS.get(target_service_name, _DEFAULT_BUDGET)
 
         if not tracker.check_budget(target_service_name, service_budget):
@@ -167,22 +203,22 @@ def run_evaluation(
                     # Track target token usage (flushed to disk after full model loop)
                     tracker.add_usage(target_service_name, model_id, response.usage, autosave=False)
 
-                    # Pull token counts for the richer log entry (3.2)
+                    # Pull token counts for the richer log entry
                     prompt_tokens = getattr(response.usage, 'prompt_tokens', 0)
                     completion_tokens = getattr(response.usage, 'completion_tokens', 0)
                     tps = completion_tokens / latency if latency > 0 else 0
 
-                    # 6. Score the Response
+                    # 6. Score the Response (Phase 4.2: pass include_* flags)
                     score_result = {"score": 0, "reason": "Scorer not matched"}
 
                     if test_case['category'] == "code_generation":
-                        score_result = score_programmatic_code(target_text)
+                        score_result = score_programmatic_code(target_text, include_output=include_model_output)
                     elif test_case['category'] == "metadata_generation":
-                        score_result = score_programmatic_metadata(target_text, test_case['expected_schema_keys'])
+                        score_result = score_programmatic_metadata(target_text, test_case['expected_schema_keys'], include_output=include_model_output)
                     elif test_case['category'] == "data_interpretation":
-                        score_result = score_exact_match(target_text, test_case['expected_exact_match'])
+                        score_result = score_exact_match(target_text, test_case['expected_exact_match'], include_output=include_model_output)
                     elif test_case['category'] == "literature_synthesis":
-                        # Guard against judge service missing from SERVICE_BUDGETS (1.2 fix)
+                        # Guard against judge service missing from SERVICE_BUDGETS
                         judge_budget = SERVICE_BUDGETS.get(judge_service, _DEFAULT_BUDGET)
                         if tracker.check_budget(judge_service, judge_budget):
                             score_result = score_with_judge(
@@ -191,14 +227,15 @@ def run_evaluation(
                                 rubric=test_case['judge_rubric'],
                                 judge_client=judge_client,
                                 judge_model=judge_model,
-                                tracker=tracker
+                                tracker=tracker,
+                                include_detail=include_judge_detail,
                             )
                             if "judge_usage" in score_result:
                                 tracker.add_usage(judge_service, judge_model, score_result.pop("judge_usage"), autosave=False)
                         else:
                             score_result = {"score": 0, "reason": "Judge budget exceeded. Evaluation skipped."}
 
-                    # Build richer log entry (3.2)
+                    # Build richer log entry (Phase 4.4: optional fields)
                     log_entry = {
                         "service": target_service_name,
                         "model": model_id,
@@ -211,11 +248,23 @@ def run_evaluation(
                         "score": score_result["score"],
                         "reason": score_result["reason"],
                     }
-                    # Preserve optional code output field when present
-                    if "output" in score_result:
-                        log_entry["code_output"] = score_result["output"]
 
-                    results_log.append(log_entry)
+                    # Add optional transparency fields
+                    if "model_output" in score_result:
+                        log_entry["model_output"] = score_result["model_output"]
+                    if "output_type" in score_result:
+                        log_entry["output_type"] = score_result["output_type"]
+                    if "judge_reasoning" in score_result:
+                        log_entry["judge_reasoning"] = score_result["judge_reasoning"]
+                    if "judge_rubric_feedback" in score_result:
+                        log_entry["judge_rubric_feedback"] = score_result["judge_rubric_feedback"]
+                    if "judge_model" in score_result:
+                        log_entry["judge_model"] = score_result["judge_model"]
+                    if "code_output" in score_result:
+                        log_entry["code_output"] = score_result["code_output"]
+
+                    # Append immediately (Phase 4.1: per-task durability)
+                    _append_result(log_entry)
                     completed_keys.add(run_key)
                     new_results_count += 1
 
@@ -224,18 +273,15 @@ def run_evaluation(
                 except Exception as e:
                     logging.error(f"      -> Error testing {model_id} on {test_case['id']}: {e}")
 
-            # Flush accumulated token usage to disk once per model (not once per task)
+            # Flush accumulated token usage to disk once per model
             tracker.save()
 
             if test_run and evaluated_count >= 2:
                 logging.info(f"  Reached max 2 models for test run on {target_service_name}")
                 break
 
-    # 7. Save Output — always write back the full merged list (append behaviour)
-    logging.info(f"\nRun complete. {new_results_count} new result(s) recorded.")
-    try:
-        with open(results_log_path, "w") as f:
-            json.dump(results_log, f, indent=2)
-        logging.info(f"Results saved to {results_log_path} ({len(results_log)} total entries)")
-    except Exception as e:
-        logging.error(f"Failed to save results: {e}")
+    # 7. Final Summary
+    logging.info(f"\n{'='*50}")
+    logging.info(f"Evaluation complete. {new_results_count} new result(s) recorded.")
+    logging.info(f"All results saved to {results_log_path}")
+    logging.info(f"{'='*50}")

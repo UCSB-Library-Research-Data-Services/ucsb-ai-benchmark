@@ -67,6 +67,84 @@ By default, the script skips known problematic models (e.g., embeddings, reranke
 uv run python run_eval.py --force-all-models
 ```
 
+## Advanced Features
+
+### Robustness & Resume
+
+Results are written to `results_log.json` **after each task** to ensure durability. If your run is interrupted (connection drop, rate limit, etc.), simply resume:
+
+```bash
+uv run python run_eval.py --resume
+```
+
+The engine automatically skips any `(service, model, test_id)` triplet already in `results_log.json` and continues where it left off. No data is lost!
+
+### Transparency & Detailed Logging
+
+By default, results only include scores and brief reasons. For deeper inspection and debugging:
+
+#### Include Full Model Outputs
+```bash
+uv run python run_eval.py --include-model-output
+```
+
+Adds `model_output` and `output_type` fields to every result entry in `results_log.json`. Useful for:
+- Debugging low scores by seeing the actual model response
+- Auditing model behavior across different services
+- Building detailed dashboards with side-by-side comparisons
+
+Example output in `results_log.json`:
+```json
+{
+  "service": "grit",
+  "model": "gemma4:31b",
+  "test_id": "code_gen_1",
+  "category": "code_generation",
+  "score": 5,
+  "reason": "Execution successful with numeric output",
+  "model_output": "import pandas as pd\ndf = pd.read_csv('data.csv')\nfiltered = df[df['temperature'] > 20]\nmean_pressure = filtered['pressure'].mean()\nprint(mean_pressure)",
+  "output_type": "code"
+}
+```
+
+#### Include Judge Reasoning (Literature Synthesis Only)
+```bash
+uv run python run_eval.py --include-model-output --include-judge-detail
+```
+
+Adds detailed judge reasoning and rubric feedback to judge-based evaluations. Requires `--include-model-output`.
+
+**Note:** This increases token usage for judge calls (requests multi-sentence feedback), so only use when you need it.
+
+Example for literature_synthesis:
+```json
+{
+  "service": "grit",
+  "model": "gemma4:31b",
+  "test_id": "lit_synthesis_1",
+  "category": "literature_synthesis",
+  "score": 4,
+  "reason": "Accurate extraction with minor detail missing",
+  "model_output": "{\"methodology\": \"GPS tracking and direct observation\", \"species\": \"sea otter (Enhydra lutris)\", \"conclusion\": \"top-down control aids kelp restoration\"}",
+  "output_type": "json",
+  "judge_reasoning": "The model correctly identified GPS tracking and direct observation as the methodology. The species identification is accurate. The conclusion captures the main finding. However, the connection to 'targeted' control mechanism was slightly underemphasized.",
+  "judge_rubric_feedback": "See detailed feedback above.",
+  "judge_model": "gemini-3.5-flash"
+}
+```
+
+### Example: Production Benchmark with Full Transparency
+
+```bash
+uv run python run_eval.py \
+  --judge-service aicommons \
+  --judge-model claude-v4.6-sonnet \
+  --include-model-output \
+  --include-judge-detail
+```
+
+This produces a fully auditable results log suitable for stakeholder review and dashboard generation.
+
 ## Reading the Results
 
 The pipeline generates two files upon completion:
@@ -84,15 +162,33 @@ This provides aggregated averages, making it easy to see which model is best at 
 - **`avg_tps`**: Average Tokens Per Second. Higher is "faster".
 
 ### 2. `results_log.json` (Deep Dive / Debugging)
+
 This file contains the raw execution logs. If a model scored poorly in the summary, check this file to find out *why*.
 
+**Baseline entry (always present):**
 ```json
 {
   "service": "grit",
   "model": "gemma4:31b",
+  "test_id": "code_gen_1",
   "category": "code_generation",
+  "latency_sec": 80.14,
+  "tps": 3.38,
+  "prompt_tokens": 450,
+  "completion_tokens": 1532,
   "score": 1,
   "reason": "Execution failed: ModuleNotFoundError: No module named 'pandas'"
 }
 ```
-In this example, the `reason` field explicitly shows why the model failed the code generation task, allowing you to debug whether the issue was the model's logic or a missing dependency in the testing environment.
+
+The `reason` field explicitly shows why the model failed the code generation task, allowing you to debug whether the issue was the model's logic or a missing dependency in the testing environment.
+
+**Optional fields (with `--include-model-output`):**
+- `model_output` — The full response from the target model (code, JSON, text, etc.)
+- `output_type` — Category of output for dashboard rendering (`code`, `json`, `multiple_choice`, `text`)
+
+**Optional fields (with `--include-judge-detail`, literature_synthesis only):**
+- `judge_reasoning` — Full multi-sentence feedback from the judge
+- `judge_rubric_feedback` — Detailed scoring rationale
+- `judge_model` — Which judge model scored this entry
+
