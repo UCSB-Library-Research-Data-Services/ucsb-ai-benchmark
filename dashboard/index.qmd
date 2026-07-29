@@ -454,7 +454,9 @@ viewof sortCol = Inputs.select(
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
-  return html;
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div;
 }
 ```
 
