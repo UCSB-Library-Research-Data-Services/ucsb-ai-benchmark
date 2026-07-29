@@ -1,0 +1,334 @@
+---
+title: "About & Methods"
+format:
+  html:
+    page-layout: full
+    toc: true
+    toc-depth: 2
+---
+
+```{=html}
+<div class="hero-section" style="padding:2.5rem 0 1.5rem">
+  <h1 style="font-size:1.9rem">About & Methods</h1>
+  <p class="lead">
+    How this benchmark was designed, what it measures, and how scores are computed.
+  </p>
+</div>
+```
+
+## Project Overview
+
+The **UCSB AI Services Evaluation Suite** is a systematic benchmark designed to assess the
+capabilities of large language models (LLMs) available through UCSB-managed AI infrastructure.
+The goal is to give researchers, students, and staff an objective basis for choosing which
+service and model best fits their workload — weighing accuracy, throughput, and availability.
+
+The benchmark covers six task categories drawn from real research computing workflows at UCSB:
+**code generation**, **metadata generation**, **literature synthesis**, **data interpretation**,
+**OCR/document extraction**, and **vision question answering**.
+
+---
+
+## Infrastructure
+
+```{=html}
+<table style="width:100%;border-collapse:collapse;margin:1rem 0">
+  <thead>
+    <tr>
+      <th>Service</th>
+      <th>Infrastructure</th>
+      <th>Endpoint</th>
+      <th>Token Budget</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="service-badge badge-grit">GRIT</span></td>
+      <td><span style="color:#58a6ff">🖥️ On-premise · Ollama</span></td>
+      <td style="font-family:monospace;font-size:0.78rem;color:#6e7681">llm.grit.ucsb.edu</td>
+      <td style="color:#8b949e">10M tokens / month</td>
+      <td style="color:#8b949e;font-size:0.85rem">UCSB General Research IT HPC cluster. Largest model catalog.</td>
+    </tr>
+    <tr>
+      <td><span class="service-badge badge-cit">CIT</span></td>
+      <td><span style="color:#3fb950">🖥️ On-premise · Ollama</span></td>
+      <td style="font-family:monospace;font-size:0.78rem;color:#6e7681">api.ai.college.ucsb.edu</td>
+      <td style="color:#8b949e">10M tokens / month</td>
+      <td style="color:#8b949e;font-size:0.85rem">College of IT servers. Higher throughput than GRIT for same models.</td>
+    </tr>
+    <tr>
+      <td><span class="service-badge badge-aicommons">AICommons</span></td>
+      <td><span style="color:#bc8cff">☁️ Cloud · Amazon Bedrock</span></td>
+      <td style="font-family:monospace;font-size:0.78rem;color:#6e7681">zkh52rh785.execute-api.us-east-1.amazonaws.com</td>
+      <td style="color:#8b949e">900K tokens / month</td>
+      <td style="color:#8b949e;font-size:0.85rem">AWS-hosted. Diverse catalog: Claude, GPT-4o, Amazon Nova, Llama 4.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="method-box">
+  <strong>Why infrastructure type matters:</strong>
+  GRIT and CIT serve all models locally — model weights run on UCSB hardware, so throughput
+  is determined by GPU capacity and network load on university servers.
+  AICommons routes requests through Amazon Web Services (Bedrock), which provides scalable
+  but metered capacity. The same model binary will produce identical outputs on both
+  infrastructure types, but throughput (tokens/sec) and latency will differ.
+</div>
+```
+
+---
+
+## Benchmark Datasets
+
+Three benchmark datasets were used, covering increasing complexity and modality:
+
+### Dataset v1 — Standard (12 tasks)
+
+```{=html}
+<div class="method-box">
+  Twelve text-only tasks across four categories. Designed to represent common research data
+  workflows: analysing tabular data programmatically, writing structured metadata,
+  synthesising scientific abstracts, and interpreting statistical outputs.
+  All tasks use a 1–5 scoring scale.
+</div>
+
+<table style="width:100%;margin:0.5rem 0">
+  <thead><tr><th>Category</th><th>Tasks</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Code Generation</td><td style="text-align:center">3</td>
+      <td style="color:#8b949e">Write Python/pandas to filter, aggregate, and summarise a CSV dataset</td>
+    </tr>
+    <tr>
+      <td>Metadata Generation</td><td style="text-align:center">3</td>
+      <td style="color:#8b949e">Generate DataCite-compliant JSON metadata records from dataset descriptions</td>
+    </tr>
+    <tr>
+      <td>Literature Synthesis</td><td style="text-align:center">3</td>
+      <td style="color:#8b949e">Extract structured information from scientific abstracts (methodology, findings, limitations)</td>
+    </tr>
+    <tr>
+      <td>Data Interpretation</td><td style="text-align:center">3</td>
+      <td style="color:#8b949e">Multiple-choice: interpret correlation matrices, regression outputs, and SST distributions</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+### Dataset v2 — Harder (12 tasks)
+
+```{=html}
+<div class="method-box">
+  Same four categories with scientifically more demanding prompts: tasks require numerical
+  precision (e.g. computing Pearson correlation to 4 decimal places), anti-hallucination
+  reasoning, detection of internal contradictions in abstracts, and advanced statistical
+  interpretation (Simpson's paradox, AIC model selection, autocorrelation).
+</div>
+```
+
+### Multimodal Dataset (6 tasks)
+
+```{=html}
+<div class="method-box">
+  Vision-language tasks using two historical document images: a 19th-century Spanish
+  newspaper scan and a historical catalogue card.
+</div>
+
+<table style="width:100%;margin:0.5rem 0">
+  <thead><tr><th>Category</th><th>Tasks</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>OCR</td><td style="text-align:center">2</td>
+      <td style="color:#8b949e">Extract structured weather table and bibliographic header from newspaper scan</td>
+    </tr>
+    <tr>
+      <td>Document Extraction</td><td style="text-align:center">1</td>
+      <td style="color:#8b949e">Extract all fields from a historical catalogue card</td>
+    </tr>
+    <tr>
+      <td>Vision QA</td><td style="text-align:center">3</td>
+      <td style="color:#8b949e">Answer specific factual questions about image content (exact match + judge-scored)</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+---
+
+## Scoring Methodology
+
+All tasks use a **1–5 integer scale**. The scoring method depends on the task category:
+
+```{=html}
+<table style="width:100%;margin:1rem 0">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Scorer Type</th>
+      <th>Score 5</th>
+      <th>Score 1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Code Generation</td>
+      <td><code>programmatic</code></td>
+      <td style="color:#8b949e">Code executes and produces the correct numeric output</td>
+      <td style="color:#8b949e">Code fails to run (syntax error / exception)</td>
+    </tr>
+    <tr>
+      <td>Metadata Generation</td>
+      <td><code>programmatic</code></td>
+      <td style="color:#8b949e">Valid JSON, all required schema keys present, values correct</td>
+      <td style="color:#8b949e">Output is not valid JSON</td>
+    </tr>
+    <tr>
+      <td>Data Interpretation</td>
+      <td><code>exact match</code></td>
+      <td style="color:#8b949e">Correct MCQ letter selected (A/B/C/D)</td>
+      <td style="color:#8b949e">Wrong answer</td>
+    </tr>
+    <tr>
+      <td>Literature Synthesis</td>
+      <td><code>LLM judge</code></td>
+      <td style="color:#8b949e">All required fields extracted accurately, no hallucinations, valid JSON</td>
+      <td style="color:#8b949e">Missing fields, fabricated content, or completely wrong</td>
+    </tr>
+    <tr>
+      <td>OCR</td>
+      <td><code>programmatic + LLM judge</code></td>
+      <td style="color:#8b949e">All table fields correctly extracted (field-accuracy ≥ 90%)</td>
+      <td style="color:#8b949e">Cannot parse response or accuracy &lt; 25%</td>
+    </tr>
+    <tr>
+      <td>Document Extraction</td>
+      <td><code>LLM judge</code></td>
+      <td style="color:#8b949e">All document fields captured, no hallucinations</td>
+      <td style="color:#8b949e">Major omissions or fabrications</td>
+    </tr>
+    <tr>
+      <td>Vision QA</td>
+      <td><code>exact match + LLM judge</code></td>
+      <td style="color:#8b949e">Correct answer (for exact-match tasks) or full credit from judge</td>
+      <td style="color:#8b949e">Wrong answer</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="method-box">
+  <strong>OCR hybrid scoring:</strong> OCR tasks are first scored programmatically
+  (field-accuracy comparison against ground-truth rows). If the programmatic score is below 4/5,
+  the LLM judge is called as a second opinion, and the <em>higher</em> score wins.
+  This gives models the benefit of the doubt for partial extraction.
+</div>
+```
+
+---
+
+## LLM-as-a-Judge
+
+For tasks requiring subjective evaluation (literature synthesis, OCR, document extraction,
+and some vision tasks), model outputs are evaluated by a second LLM acting as a judge.
+The judge receives the model output, the original prompt, and a detailed scoring rubric,
+then returns a structured JSON response with a score (1–5) and reasoning.
+
+### Judges Used
+
+```{=html}
+<table style="width:100%;margin:1rem 0">
+  <thead>
+    <tr><th>Judge</th><th>Service</th><th>Role</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>gemini-3.5-flash</strong></td>
+      <td><span style="color:#6e7681;text-decoration:line-through">DreamLab</span></td>
+      <td style="color:#8b949e">Development judge — used during iterative benchmark development for cost efficiency</td>
+    </tr>
+    <tr>
+      <td><strong>claude-v4.6-sonnet</strong></td>
+      <td><span class="service-badge badge-aicommons">AICommons</span></td>
+      <td style="color:#8b949e">Production judge — used for all final benchmark runs; canonical scores on this dashboard</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="method-box">
+  <strong>Judge conflict guard:</strong> The evaluation engine prevents a model from judging its own outputs.
+  It detects conflicts by exact model name match, cross-service exact match, and 6-character
+  family substring matching. If a conflict is detected, the alternative judge is used automatically.<br><br>
+  <strong>Dashboard policy:</strong> Where both judges evaluated the same output, the dashboard
+  defaults to Claude (production judge) scores. The Model Explorer page provides a toggle
+  to view and compare both judge scores for literature synthesis tasks.
+</div>
+```
+
+---
+
+## Token Budgets & Evaluation Scope
+
+```{=html}
+<div class="method-box">
+  Each service has a monthly token budget enforced by the evaluation engine.
+  Token consumption is tracked atomically across runs in <code>.token_usage.json</code>.
+  Judge calls (which consume tokens from the judge's service budget) stop automatically
+  when the monthly limit is approached — leaving a safety buffer.<br><br>
+  Budgets: GRIT 10M · CIT 10M · AICommons 900K (strict 1M monthly cap with 100K buffer).
+</div>
+```
+
+---
+
+## Reproducibility
+
+The full evaluation suite is open-source. To reproduce any result:
+
+```{=html}
+<div class="method-box">
+  <code>uv run python run_eval.py --judge-service aicommons --judge-model claude-v4.6-sonnet</code><br><br>
+  The <code>--resume</code> flag skips already-completed <code>(service, model, test_id)</code> triplets,
+  making interrupted runs safe to continue.
+  The <code>--re-judge</code> flag re-scores stored model outputs with a new judge
+  without re-calling target models — useful for comparing judge quality without incurring
+  additional inference costs.
+</div>
+```
+
+---
+
+## Acknowledgements
+
+```{=html}
+<div class="dreamlab-callout">
+  <h4>🙏 DreamLab — Acknowledgement &amp; Contribution</h4>
+  <p>
+    The <strong>UCSB DreamLab</strong> (<code>litellm.dreamlab.ucsb.edu</code>) made a
+    significant contribution to this evaluation project. DreamLab provided access to a
+    suite of <strong>Google Gemini models</strong> via a LiteLLM proxy, including:
+    <em>gemini-3.5-flash, gemini-3.6-flash, gemini-3.1-flash-lite, gemini-3.1-pro-preview,
+    gemini-3.1-pro-preview-customtools,</em> and <em>gemini-3-flash-preview</em>.<br><br>
+
+    DreamLab's <strong>gemini-3.5-flash</strong> served as the default LLM judge throughout
+    the iterative development of this benchmark suite, processing hundreds of judge evaluations
+    and enabling rapid iteration. All final production results were re-judged with
+    claude-v4.6-sonnet for comparability, but the DreamLab judge was integral to the
+    benchmark's development pipeline.<br><br>
+
+    <strong>DreamLab results are not included in the comparative dashboard</strong> because
+    DreamLab cannot guarantee the continued availability of LLM inference services going forward.
+    Including results from a service that may become unavailable would undermine the dashboard's
+    usefulness as a guide for current service selection.<br><br>
+
+    We thank the DreamLab team for their support of UCSB's AI research infrastructure
+    and their contribution to this project.
+  </p>
+</div>
+
+<div class="method-box" style="margin-top:1.5rem">
+  <strong>Citation / attribution:</strong>
+  If you use these benchmark results or the evaluation framework in your research,
+  please cite the project repository and acknowledge the UCSB AI infrastructure teams
+  at GRIT, CIT, AICommons, and DreamLab.
+</div>
+```
