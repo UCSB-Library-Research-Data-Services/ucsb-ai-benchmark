@@ -1,0 +1,32 @@
+[
+  {
+    "service": "grit",
+    "model": "gemma4:31b",
+    "test_id": "code_gen_1",
+    "category": "code_generation",
+    "latency_sec": 27.16,
+    "tps": 8.73,
+    "score": 5,
+    "reason": "Execution successful"
+  },
+  {
+    "service": "CIT",
+    "model": "gemma-4-31b",
+    "test_id": "code_gen_1",
+    "category": "code_generation",
+    "latency_sec": 0.08,
+    "tps": 695.48,
+    "score": 5,
+    "reason": "Execution successful"
+  },
+  {
+    "service": "CIT",
+    "model": "mistral-small-4-119b-2603",
+    "test_id": "code_gen_1",
+    "category": "code_generation",
+    "latency_sec": 0.08,
+    "tps": 630.79,
+    "score": 5,
+    "reason": "Execution successful"
+  }
+]

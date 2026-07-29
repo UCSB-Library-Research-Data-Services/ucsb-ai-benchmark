@@ -1,0 +1,4 @@
+service,model,tests_run,avg_score,avg_tps
+grit,gemma4:31b,1,5.0,8.73
+CIT,gemma-4-31b,1,5.0,695.48
+CIT,mistral-small-4-119b-2603,1,5.0,630.79
