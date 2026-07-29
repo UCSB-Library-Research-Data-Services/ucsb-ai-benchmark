@@ -75,8 +75,15 @@ def main():
     parser.add_argument("--judge-service", type=str, default=DEFAULT_JUDGE_SERVICE, help=f"Service to use for the Judge LLM (default: {DEFAULT_JUDGE_SERVICE}).")
     parser.add_argument("--judge-model", type=str, default=DEFAULT_JUDGE_MODEL, help=f"Model to use for the Judge LLM (default: {DEFAULT_JUDGE_MODEL}).")
     parser.add_argument("--force-all-models", action="store_true", help="Bypass the exclusion list and test all active models.")
+    parser.add_argument("--include-model-output", action="store_true", help="Include full target model responses in results log (for transparency).")
+    parser.add_argument("--include-judge-detail", action="store_true", help="Include full judge reasoning and rubric feedback (requires --include-model-output).")
+    parser.add_argument("--resume", action="store_true", help="Resume from last checkpoint: skip (service, model, test_id) triplets already in results_log.json.")
     
     args = parser.parse_args()
+    
+    # Validate flag dependencies (Phase 4.3)
+    if args.include_judge_detail and not args.include_model_output:
+        parser.error("--include-judge-detail requires --include-model-output")
     
     print("=======================================")
     print("Starting Evaluation Pipeline...")
@@ -85,7 +92,10 @@ def main():
         test_run=args.test_run, 
         judge_service=args.judge_service, 
         judge_model=args.judge_model,
-        force_all_models=args.force_all_models
+        force_all_models=args.force_all_models,
+        include_model_output=args.include_model_output,
+        include_judge_detail=args.include_judge_detail,
+        resume=args.resume,
     )
     
     print("\n=======================================")
