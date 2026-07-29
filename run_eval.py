@@ -113,6 +113,15 @@ Examples:
     parser.add_argument("--include-model-output", action="store_true", help="Include full target model responses in results_log.json.")
     parser.add_argument("--include-judge-detail", action="store_true", help="Include full judge reasoning and rubric feedback (requires --include-model-output).")
     parser.add_argument("--resume", action="store_true", help="Skip (service, model, test_id) triplets already recorded in results_log.json.")
+    parser.add_argument(
+        "--allow-self-judge",
+        action="store_true",
+        help=(
+            "Disable the judge-conflict guard and allow a model to be evaluated "
+            "by a judge from the same model family. NOT recommended for production benchmarks — "
+            "use only for debugging or when you explicitly want self-comparison."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -146,6 +155,7 @@ Examples:
         include_model_output=args.include_model_output,
         include_judge_detail=args.include_judge_detail,
         resume=args.resume,
+        allow_self_judge=args.allow_self_judge,
     )
     
     print("\n=======================================")

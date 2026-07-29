@@ -46,6 +46,75 @@ _VISION_MODEL_HINTS = [
     "all-the-things",                                  # UCSB multi-capability model
 ]
 
+# Judge-only categories: tasks whose score comes entirely from the LLM judge.
+# When a model is the judge, it MUST NOT also be evaluated on these categories —
+# grading your own output inflates scores and violates evaluation validity.
+_JUDGE_SCORED_CATEGORIES = {"literature_synthesis", "ocr", "document_extraction", "vision_qa"}
+
+
+# ---------------------------------------------------------------------------
+# Judge / evaluated-model conflict detection
+# ---------------------------------------------------------------------------
+
+def _normalise_model_id(model_id: str) -> str:
+    """Lowercase and strip common version suffixes for family matching."""
+    return model_id.lower().strip()
+
+
+def _is_judge_conflict(
+    judge_service: str,
+    judge_model: str,
+    target_service: str,
+    target_model: str,
+) -> tuple[bool, str]:
+    """Return (True, reason) if the evaluated model would be judging itself.
+
+    Three conflict levels are checked, from strictest to loosest:
+
+    1. EXACT — same service AND same model ID (clear self-grading).
+    2. CROSS-SERVICE EXACT — different service but identical model name
+       (e.g. judge=aicommons/claude-v4.6-sonnet, target=CIT/claude-v4.6-sonnet).
+    3. FAMILY — one ID is a substring of the other
+       (e.g. judge=aicommons/claude-v4.6-sonnet would match
+        target=aicommons/claude-v4.5-haiku because "claude" is shared,
+        so we use a stricter check: the *full versioned name* must be a
+        substring, not just the family prefix).
+
+    The family check is intentionally conservative to avoid over-blocking:
+    "gemini-3.5-flash" judging "gemini-3.6-flash" are different models from
+    different checkpoints — we allow that. But "claude-v4.6-sonnet" judging
+    "claude-v4.6-sonnet" (exact cross-service) is blocked.
+    """
+    j = _normalise_model_id(judge_model)
+    t = _normalise_model_id(target_model)
+
+    # Level 1: exact same service + model
+    if judge_service == target_service and j == t:
+        return True, (
+            f"EXACT SELF-JUDGE: judge and target are the same model "
+            f"({target_service}/{target_model})."
+        )
+
+    # Level 2: exact model name match across different services
+    if j == t:
+        return True, (
+            f"CROSS-SERVICE SELF-JUDGE: judge model '{judge_model}' "
+            f"matches target '{target_service}/{target_model}' by name."
+        )
+
+    # Level 3: versioned family match — full judge name is a substring of
+    # target (or vice-versa). This catches e.g. gpt-4o judging gpt-4.
+    # We require the match to span at least 6 chars to avoid false positives
+    # from short common tokens ("llm", "gpt", etc.).
+    MIN_MATCH_LEN = 6
+    if len(j) >= MIN_MATCH_LEN and (j in t or t in j):
+        return True, (
+            f"FAMILY SELF-JUDGE: judge '{judge_model}' and target "
+            f"'{target_service}/{target_model}' share the same model family."
+        )
+
+    return False, ""
+
 
 # ---------------------------------------------------------------------------
 # Image helpers
@@ -181,6 +250,7 @@ def run_evaluation(
     include_model_output: bool = False,
     include_judge_detail: bool = False,
     resume: bool = False,
+    allow_self_judge: bool = False,
 ):
     tracker = TokenTracker()
 
@@ -307,6 +377,32 @@ def run_evaluation(
                     _append_result(skip_entry)
                     completed_keys.add(run_key)
                     continue
+
+                # Judge-conflict skip: a model must never grade its own output.
+                # Only applies to judge-scored categories (subjective tasks).
+                # Programmatic tasks (code, metadata, exact-match) are unaffected.
+                if (not allow_self_judge
+                        and test_case.get("category") in _JUDGE_SCORED_CATEGORIES):
+                    conflict, reason = _is_judge_conflict(
+                        judge_service, judge_model, svc_name, model_id
+                    )
+                    if conflict:
+                        logging.warning(
+                            f"    Skipping {test_case['id']} for {model_id} "
+                            f"— judge conflict: {reason}"
+                        )
+                        conflict_entry = {
+                            "service": svc_name, "model": model_id,
+                            "test_id": test_case["id"], "category": test_case["category"],
+                            "latency_sec": 0, "tps": 0,
+                            "prompt_tokens": 0, "completion_tokens": 0,
+                            "score": None,
+                            "reason": f"Skipped: judge conflict — {reason}",
+                            "judge_conflict": True,
+                        }
+                        _append_result(conflict_entry)
+                        completed_keys.add(run_key)
+                        continue
 
                 logging.info(f"    Task: {test_case['category']} ({test_case['id']})")
 
