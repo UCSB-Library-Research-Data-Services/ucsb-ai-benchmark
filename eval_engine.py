@@ -220,7 +220,23 @@ def _load_existing_results(path: str) -> list:
 
 
 def _make_run_key(entry: dict) -> str:
-    return f"{entry['service']}::{entry['model']}::{entry['test_id']}"
+    """Unique key identifying a (service, model, test_id [, judge_model]) combination.
+
+    Judge-awareness:
+    - Entries WITHOUT a 'judge_model' field (programmatic scorers, or legacy entries
+      pre-dating this change) use the 3-part key: service::model::test_id
+    - Entries WITH a 'judge_model' field use the 4-part key:
+      service::model::test_id::judge_model
+
+    This allows the same (service, model, test_id) to be stored multiple times —
+    once per judge — enabling side-by-side judge comparison without overwriting.
+
+    Backward compatibility: all existing entries without 'judge_model' are
+    addressed by their 3-part key, exactly as before.
+    """
+    base = f"{entry['service']}::{entry['model']}::{entry['test_id']}"
+    judge = entry.get("judge_model")
+    return f"{base}::{judge}" if judge else base
 
 
 def _append_result(result: dict, log_path: str = "results_log.json") -> None:
@@ -237,8 +253,249 @@ def _append_result(result: dict, log_path: str = "results_log.json") -> None:
 
 
 # ---------------------------------------------------------------------------
-# Main evaluation loop
+# Re-judge pipeline
 # ---------------------------------------------------------------------------
+
+# Categories whose scores come exclusively from the LLM judge.
+# Only these entries can be re-judged (programmatic scores are deterministic
+# and do not need a second opinion).
+_RE_JUDGEABLE_CATEGORIES = {
+    "literature_synthesis",
+    "ocr",
+    "document_extraction",
+    "vision_qa",
+}
+
+
+def re_judge_from_log(
+    judge_service: str,
+    judge_model: str,
+    source_judge: str | None = None,
+    categories: list[str] | None = None,
+    services: list[str] | None = None,
+    include_judge_detail: bool = False,
+    allow_self_judge: bool = False,
+    log_path: str = "results_log.json",
+):
+    """Re-score existing log entries with a different judge, without re-calling targets.
+
+    Reads `model_output` from already-completed log entries and re-sends each
+    one to the new judge. Stores results under a judge-aware key so they coexist
+    alongside the original scores — the original entries are never modified.
+
+    Args:
+        judge_service:      Service hosting the new judge (e.g. "aicommons").
+        judge_model:        New judge model ID (e.g. "claude-v4.6-sonnet").
+        source_judge:       If set, only re-judge entries previously scored by
+                            this judge (e.g. "gemini-3.5-flash"). None = all.
+        categories:         Restrict to these categories. None = all re-judgeable.
+        services:           Restrict to entries from these target services. None = all.
+        include_judge_detail: Request multi-sentence reasoning from judge.
+        allow_self_judge:   If False (default), skip entries where the new judge
+                            matches the evaluated model (conflict guard).
+        log_path:           Path to results_log.json.
+    """
+    tracker = TokenTracker()
+
+    # Initialise new judge client
+    logging.info(f"Re-judge run — new judge: {judge_service} / {judge_model}")
+    try:
+        judge_client = get_client(judge_service)
+    except Exception as e:
+        logging.error(f"Failed to initialise judge: {e}")
+        return
+
+    # Load existing results
+    existing = _load_existing_results(log_path)
+    if not existing:
+        logging.warning(f"No existing results found in '{log_path}'.")
+        return
+
+    # Build set of already-completed re-judge keys to support resume
+    completed_keys = {_make_run_key(r) for r in existing}
+
+    # Filter to candidates
+    target_cats = set(categories) if categories else _RE_JUDGEABLE_CATEGORIES
+    candidates = [
+        r for r in existing
+        if r["category"] in target_cats
+        and r.get("model_output")               # must have stored output
+        and r.get("score") is not None          # must have a real score
+        and not r.get("judge_conflict")         # skip already-conflicted entries
+        and (source_judge is None or r.get("judge_model") == source_judge)
+        and (services is None or r["service"] in services)
+    ]
+
+    logging.info(
+        f"Found {len(candidates)} candidate entries to re-judge "
+        f"(source_judge={source_judge!r}, categories={sorted(target_cats)}, "
+        f"services={services})"
+    )
+
+    if not candidates:
+        logging.warning("Nothing to re-judge. Check --source-judge / --categories / --services filters.")
+        return
+
+    new_count = 0
+    skipped_conflict = 0
+    skipped_existing = 0
+
+    for orig in candidates:
+        svc_name   = orig["service"]
+        model_id   = orig["model"]
+        test_id    = orig["test_id"]
+        category   = orig["category"]
+
+        # Build the judge-aware key for the NEW judge
+        candidate_entry_key_fields = {
+            "service": svc_name, "model": model_id,
+            "test_id": test_id,  "judge_model": judge_model,
+        }
+        new_key = _make_run_key(candidate_entry_key_fields)
+
+        if new_key in completed_keys:
+            logging.info(f"    Skipping {svc_name}/{model_id}/{test_id} — already re-judged by {judge_model}.")
+            skipped_existing += 1
+            continue
+
+        # Judge-conflict guard
+        if not allow_self_judge and category in _JUDGE_SCORED_CATEGORIES:
+            conflict, reason = _is_judge_conflict(judge_service, judge_model, svc_name, model_id)
+            if conflict:
+                logging.warning(
+                    f"    Skipping {svc_name}/{model_id}/{test_id} — "
+                    f"judge conflict: {reason}"
+                )
+                skipped_conflict += 1
+                continue
+
+        logging.info(f"  Re-judging {svc_name}/{model_id} — {test_id} ({category})")
+
+        # Retrieve what the original evaluation task looked like
+        # We need prompt + rubric from the dataset, so we try to reconstruct them
+        # from the original entry; if not present fall back to generic rubric.
+        original_prompt = orig.get("prompt", "")   # not stored yet — see note below
+        original_rubric = orig.get("judge_rubric", "")
+
+        # If prompt/rubric aren't stored in the log (current schema doesn't store them),
+        # load them from the dataset file that was originally used.
+        if not original_prompt or not original_rubric:
+            original_prompt, original_rubric = _lookup_prompt_rubric(test_id)
+
+        model_output = orig["model_output"]
+
+        judge_budget = SERVICE_BUDGETS.get(judge_service, _DEFAULT_BUDGET)
+        if not tracker.check_budget(judge_service, judge_budget):
+            logging.warning(f"Judge budget exceeded for {judge_service}. Stopping re-judge run.")
+            break
+
+        try:
+            if category == "document_extraction":
+                score_result = score_document_extraction(
+                    response_text=model_output,
+                    judge_client=judge_client,
+                    judge_model=judge_model,
+                    prompt=original_prompt,
+                    rubric=original_rubric,
+                    tracker=tracker,
+                    include_detail=include_judge_detail,
+                )
+            else:
+                score_result = score_with_judge(
+                    target_response=model_output,
+                    prompt=original_prompt,
+                    rubric=original_rubric,
+                    judge_client=judge_client,
+                    judge_model=judge_model,
+                    tracker=tracker,
+                    include_detail=include_judge_detail,
+                )
+
+            if "judge_usage" in score_result:
+                tracker.add_usage(
+                    judge_service, judge_model,
+                    score_result.pop("judge_usage"), autosave=False
+                )
+
+            # Build new log entry — carries all original perf metrics,
+            # plus the new judge's score and reasoning
+            new_entry = {
+                # Identity
+                "service":           svc_name,
+                "model":             model_id,
+                "test_id":           test_id,
+                "category":          category,
+                # Original performance metrics (unchanged)
+                "latency_sec":       orig.get("latency_sec", 0),
+                "tps":               orig.get("tps", 0),
+                "prompt_tokens":     orig.get("prompt_tokens", 0),
+                "completion_tokens": orig.get("completion_tokens", 0),
+                # New judge's assessment
+                "score":             score_result["score"],
+                "reason":            score_result["reason"],
+                "judge_model":       judge_model,
+                # Provenance: link back to the original entry
+                "re_judged_from":    orig.get("judge_model", "unknown"),
+                # Original model output (preserved for further re-judging)
+                "model_output":      model_output,
+                "output_type":       orig.get("output_type", ""),
+            }
+            # Optional detail fields
+            for k in ("judge_reasoning", "judge_rubric_feedback",
+                      "ocr_accuracy", "fields_correct", "fields_total"):
+                if k in score_result:
+                    new_entry[k] = score_result[k]
+
+            _append_result(new_entry, log_path)
+            completed_keys.add(new_key)
+            new_count += 1
+
+            logging.info(
+                f"    [{orig.get('judge_model','?')} → {judge_model}] "
+                f"score: {orig['score']} → {score_result['score']} | "
+                f"{orig['reason'][:40]}... | {score_result['reason'][:40]}..."
+            )
+
+        except Exception as e:
+            logging.error(f"    Error re-judging {svc_name}/{model_id}/{test_id}: {e}")
+
+    # Flush token usage
+    tracker.save()
+
+    logging.info(f"\n{'='*50}")
+    logging.info(
+        f"Re-judge complete — {new_count} new entries, "
+        f"{skipped_existing} already done, "
+        f"{skipped_conflict} conflict-skipped."
+    )
+    logging.info(f"{'='*50}")
+
+
+def _lookup_prompt_rubric(test_id: str) -> tuple[str, str]:
+    """Look up the original prompt and judge_rubric for a test_id.
+
+    Searches all known dataset files in order of specificity.
+    Returns ("", "") if not found — the judge will still work but
+    context will be minimal.
+    """
+    dataset_files = [
+        "eval_dataset_multimodal.json",
+        "eval_dataset_v2.json",
+        "eval_dataset.json",
+    ]
+    for path in dataset_files:
+        try:
+            with open(path) as f:
+                for task in json.load(f):
+                    if task["id"] == test_id:
+                        return (
+                            task.get("prompt", ""),
+                            task.get("judge_rubric", "Score 1-5 for accuracy and completeness."),
+                        )
+        except (FileNotFoundError, json.JSONDecodeError):
+            continue
+    logging.warning(f"Could not find prompt/rubric for test_id '{test_id}' in any dataset file.")
+    return "", "Score the model output 1-5 based on accuracy and completeness."
 
 def run_evaluation(
     dataset_path: str = "eval_dataset.json",
