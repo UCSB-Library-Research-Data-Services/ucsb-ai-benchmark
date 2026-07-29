@@ -1,0 +1,545 @@
+---
+title: "Benchmarks"
+format:
+  html:
+    page-layout: full
+---
+
+```{=html}
+<div class="hero-section" style="padding:2.5rem 0 1.5rem">
+  <h1 style="font-size:1.9rem">Benchmark Deep-Dive</h1>
+  <p class="lead">
+    Explore evaluation results at the individual task level. The heatmap reveals which
+    models consistently nail certain task types — and which tasks remain genuinely
+    challenging. Use the category tabs to focus on a specific capability area.
+  </p>
+</div>
+```
+
+```{ojs}
+//| output: false
+per_test = FileAttachment("data/per_test_scores.json").json()
+lb       = FileAttachment("data/leaderboard.json").json()
+
+service_colors = ({
+  "grit":      "#58a6ff",
+  "CIT":       "#3fb950",
+  "aicommons": "#bc8cff"
+})
+service_labels = ({ "grit": "GRIT", "CIT": "CIT", "aicommons": "AICommons" })
+
+cat_order = ["code_generation","metadata_generation","literature_synthesis",
+             "data_interpretation","ocr","document_extraction","vision_qa"]
+
+cat_labels_map = ({
+  "code_generation":     "Code Generation",
+  "metadata_generation": "Metadata Generation",
+  "literature_synthesis":"Literature Synthesis",
+  "data_interpretation": "Data Interpretation",
+  "ocr":                 "OCR",
+  "document_extraction": "Document Extraction",
+  "vision_qa":           "Vision QA"
+})
+
+// Canonical judge dedup: prefer claude
+canonical_tests = {
+  const map = new Map();
+  for (const r of per_test) {
+    const k = r.service + "|||" + r.model + "|||" + r.test_id;
+    const ex = map.get(k);
+    if (!ex) { map.set(k, r); }
+    else if ((r.judge_model || "") === "claude-v4.6-sonnet") { map.set(k, r); }
+  }
+  return [...map.values()];
+}
+
+// Model display label: "SERVICE / model"
+function modelLabel(r) {
+  return service_labels[r.service] + " / " + r.model;
+}
+
+// Score → colour
+function scoreColor(s) {
+  if (s === null || s === undefined) return "#1c2128";
+  if (s >= 5)   return "#1a7f37";
+  if (s >= 4)   return "#1d6fa0";
+  if (s >= 3)   return "#9a6700";
+  if (s >= 2)   return "#a0400a";
+  return "#6e0f0a";
+}
+function scoreTextColor(s) {
+  if (s === null || s === undefined) return "#6e7681";
+  return "#e6edf3";
+}
+```
+
+---
+
+## Score Heatmap
+
+```{=html}
+<p class="section-subheading">
+  Each cell shows the score (1–5) for a specific model on a specific task.
+  Dark green = perfect score (5). Filter by category to zoom in.
+  Models with no data for a category are omitted from that view.
+</p>
+```
+
+```{ojs}
+viewof heatmap_cat = Inputs.select(
+  ["all", ...cat_order],
+  {
+    value: "all",
+    label: "Category filter",
+    format: v => v === "all" ? "All categories" : cat_labels_map[v]
+  }
+)
+```
+
+```{ojs}
+{
+  // Filter rows
+  const rows = canonical_tests.filter(d =>
+    heatmap_cat === "all" || d.category === heatmap_cat
+  );
+
+  if (rows.length === 0)
+    return htl.html`<p style="color:#8b949e;padding:1rem">No data for this selection.</p>`;
+
+  // Models (Y axis) — sorted by overall score desc
+  const lb_map = new Map(lb.map(r => [r.service+"|||"+r.model, r]));
+  const model_keys_raw = [...new Set(rows.map(r => r.service+"|||"+r.model))];
+  const model_keys = model_keys_raw.sort((a,b) => {
+    const sa = lb_map.get(a)?.overall_score ?? 0;
+    const sb = lb_map.get(b)?.overall_score ?? 0;
+    return sb - sa;
+  });
+  const model_labels = model_keys.map(k => {
+    const parts = k.split("|||");
+    return service_labels[parts[0]] + " / " + parts[1];
+  });
+
+  // Test IDs (X axis) — sorted by category order then alphabetically
+  const test_ids = [...new Set(rows.map(r => r.test_id))].sort((a,b) => {
+    const ca = rows.find(r=>r.test_id===a)?.category || "";
+    const cb = rows.find(r=>r.test_id===b)?.category || "";
+    const ci = cat_order.indexOf(ca) - cat_order.indexOf(cb);
+    if (ci !== 0) return ci;
+    return a.localeCompare(b);
+  });
+
+  // Build lookup
+  const lookup = new Map();
+  rows.forEach(r => {
+    lookup.set(r.service+"|||"+r.model+"|||"+r.test_id, r);
+  });
+
+  // Dimensions
+  const cellW = 36, cellH = 22, cellGap = 2;
+  const labelW = 215, labelH = 72;
+  const totalW = labelW + test_ids.length * (cellW + cellGap) + 20;
+  const totalH = labelH + model_keys.length * (cellH + cellGap) + 50;
+
+  const svg = d3.create("svg")
+    .attr("width", totalW).attr("height", totalH)
+    .style("font-family","-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif")
+    .style("overflow","visible");
+
+  // Column headers (test IDs, rotated) + category band
+  let lastCat = null;
+  let bandStart = 0;
+  test_ids.forEach((tid, ti) => {
+    const cx = labelW + ti * (cellW + cellGap);
+    const thisCat = rows.find(r=>r.test_id===tid)?.category || "";
+
+    // Category colour band
+    if (thisCat !== lastCat) {
+      // Close previous band
+      if (lastCat !== null) {
+        svg.append("rect")
+          .attr("x", labelW + bandStart * (cellW + cellGap))
+          .attr("y", 2).attr("height", 8)
+          .attr("width", (ti - bandStart) * (cellW + cellGap) - cellGap)
+          .attr("rx", 2)
+          .attr("fill", "#30363d");
+      }
+      bandStart = ti;
+      lastCat = thisCat;
+    }
+
+    // Test ID label
+    svg.append("text")
+      .attr("transform", `translate(${cx + cellW/2},${labelH - 6}) rotate(-45)`)
+      .attr("text-anchor","start").attr("font-size",9).attr("fill","#8b949e")
+      .text(tid);
+  });
+  // Final band
+  if (lastCat !== null) {
+    svg.append("rect")
+      .attr("x", labelW + bandStart * (cellW + cellGap))
+      .attr("y", 2).attr("height", 8)
+      .attr("width", (test_ids.length - bandStart) * (cellW + cellGap) - cellGap)
+      .attr("rx", 2).attr("fill", "#30363d");
+  }
+
+  // Category labels above bands
+  const catGroups = {};
+  test_ids.forEach((tid,ti)=>{
+    const cat = rows.find(r=>r.test_id===tid)?.category||"";
+    if (!catGroups[cat]) catGroups[cat]={start:ti,end:ti};
+    else catGroups[cat].end = ti;
+  });
+  Object.entries(catGroups).forEach(([cat,[start,end]])=>{
+    // handled inline above; add text
+  });
+
+  // Row headers + cells
+  model_keys.forEach((mk, mi) => {
+    const ry = labelH + mi * (cellH + cellGap);
+    const parts = mk.split("|||");
+    const svc   = parts[0];
+
+    // Alternating row bg
+    if (mi % 2 === 0) {
+      svg.append("rect").attr("x",0).attr("y",ry-1)
+        .attr("width",totalW).attr("height",cellH+2)
+        .attr("fill","rgba(255,255,255,0.012)").attr("rx",2);
+    }
+
+    // Model label
+    svg.append("text")
+      .attr("x", labelW - 8).attr("y", ry + cellH/2 + 4)
+      .attr("text-anchor","end").attr("font-size",10.5)
+      .attr("fill", service_colors[svc])
+      .text(model_labels[mi].substring(0,34));
+
+    // Cells
+    test_ids.forEach((tid, ti) => {
+      const cx = labelW + ti * (cellW + cellGap);
+      const key = mk + "|||" + tid;
+      const entry = lookup.get(key);
+      const score = entry ? entry.score : null;
+      const fill  = score !== null ? scoreColor(score) : "#161b22";
+      const text  = score !== null ? String(score) : "·";
+
+      svg.append("rect")
+        .attr("x",cx).attr("y",ry)
+        .attr("width",cellW).attr("height",cellH).attr("rx",3)
+        .attr("fill",fill);
+
+      svg.append("text")
+        .attr("x",cx+cellW/2).attr("y",ry+cellH/2+4)
+        .attr("text-anchor","middle").attr("font-size",9.5).attr("font-weight",score>=5?700:400)
+        .attr("fill",scoreTextColor(score))
+        .text(text);
+    });
+  });
+
+  // Colour legend
+  const ly = totalH - 30;
+  const legendItems = [
+    [5,"#1a7f37","5 (perfect)"],
+    [4,"#1d6fa0","4"],
+    [3,"#9a6700","3"],
+    [2,"#a0400a","2"],
+    [1,"#6e0f0a","1 (poor)"],
+    [null,"#161b22","Not tested"]
+  ];
+  let lx = labelW;
+  legendItems.forEach(([v,c,label]) => {
+    svg.append("rect").attr("x",lx).attr("y",ly).attr("width",14).attr("height",14).attr("rx",2).attr("fill",c);
+    svg.append("text").attr("x",lx+17).attr("y",ly+10.5).attr("font-size",9.5).attr("fill","#8b949e").text(label);
+    lx += label.length*5.8+22;
+  });
+
+  return svg.node();
+}
+```
+
+---
+
+## Score Distribution
+
+```{=html}
+<p class="section-subheading">
+  Histogram of individual task scores across all models in the selected category.
+  This reveals whether tasks are discriminating (scores spread 1–5) or whether
+  all models cluster at the top — indicating a possible ceiling effect.
+</p>
+<div class="chart-card">
+  <h4>Score Distribution by Category</h4>
+  <div class="chart-subtitle">Select a category to see how scores are distributed across all models and all tasks.</div>
+```
+
+```{ojs}
+viewof dist_cat = Inputs.select(
+  cat_order,
+  {
+    value: "code_generation",
+    label: "Category",
+    format: v => cat_labels_map[v]
+  }
+)
+```
+
+```{ojs}
+{
+  const vals = canonical_tests
+    .filter(d => d.category === dist_cat)
+    .map(d => d.score);
+
+  if (vals.length === 0)
+    return htl.html`<p style="color:#8b949e">No data.</p>`;
+
+  // Count per score 0..5
+  const counts = [0,1,2,3,4,5].map(v => ({ score: v, count: vals.filter(x=>x===v).length }));
+  const total = vals.length;
+  const mean  = (vals.reduce((a,b)=>a+b,0)/total).toFixed(2);
+  const pct5  = Math.round(vals.filter(x=>x===5).length/total*100);
+
+  const width=500, height=240, mL=50,mB=44,mT=20,mR=20;
+  const pW=width-mL-mR, pH=height-mT-mB;
+
+  const xS = d3.scaleBand().domain([0,1,2,3,4,5]).range([0,pW]).paddingInner(0.2);
+  const yS = d3.scaleLinear().domain([0,Math.max(...counts.map(d=>d.count))*1.1]).range([pH,0]);
+
+  const svg = d3.create("svg")
+    .attr("width",width).attr("height",height)
+    .style("font-family","-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif");
+  const g = svg.append("g").attr("transform",`translate(${mL},${mT})`);
+
+  // Grid
+  yS.ticks(4).forEach(v => {
+    g.append("line").attr("x1",0).attr("x2",pW).attr("y1",yS(v)).attr("y2",yS(v))
+     .attr("stroke","#30363d").attr("stroke-dasharray","3,3");
+    g.append("text").attr("x",-6).attr("y",yS(v)+4).attr("text-anchor","end")
+     .attr("font-size",9.5).attr("fill","#8b949e").text(v);
+  });
+
+  counts.forEach(d => {
+    if (d.count === 0) return;
+    const bx = xS(d.score), by = yS(d.count), bw = xS.bandwidth(), bh = pH-by;
+    g.append("rect").attr("x",bx).attr("y",by).attr("width",bw).attr("height",bh)
+     .attr("rx",3).attr("fill",scoreColor(d.score)).attr("opacity",0.85);
+    g.append("text").attr("x",bx+bw/2).attr("y",by-4)
+     .attr("text-anchor","middle").attr("font-size",10).attr("fill","#e6edf3")
+     .text(d.count);
+    g.append("text").attr("x",bx+bw/2).attr("y",pH+14)
+     .attr("text-anchor","middle").attr("font-size",10).attr("fill","#8b949e")
+     .text(d.score);
+  });
+
+  g.append("text").attr("x",pW/2).attr("y",pH+30)
+   .attr("text-anchor","middle").attr("font-size",11).attr("fill","#8b949e").text("Score");
+  g.append("text").attr("transform",`translate(-38,${pH/2}) rotate(-90)`)
+   .attr("text-anchor","middle").attr("font-size",11).attr("fill","#8b949e").text("# Tasks");
+
+  // Summary stats
+  g.append("text").attr("x",pW).attr("y",12)
+   .attr("text-anchor","end").attr("font-size",10.5).attr("fill","#8b949e")
+   .text(`n=${total}  ·  mean=${mean}  ·  score-5: ${pct5}%`);
+
+  return svg.node();
+}
+```
+
+```{=html}
+</div>
+
+<div class="method-box">
+  <strong>Ceiling effect alert:</strong> Code Generation and Data Interpretation show a strong ceiling effect —
+  nearly all models score 5/5, indicating these tasks may not be discriminating enough to distinguish
+  model quality for text-capable LLMs. Multimodal tasks (OCR, Vision QA) show wider score spread,
+  reflecting genuine capability differences.
+</div>
+```
+
+---
+
+## Multimodal & Vision Availability
+
+```{=html}
+<p class="section-subheading">
+  Only a subset of models support image/vision inputs. This matrix shows which models were
+  tested on multimodal tasks and their results. Models without vision capability received
+  a score of 0 (skipped) and are shown in grey.
+</p>
+<div class="chart-card">
+  <h4>Vision & OCR Task Matrix</h4>
+  <div class="chart-subtitle">
+    Multimodal tasks: OCR (2 tasks), Document Extraction (1 task), Vision QA (3 tasks).
+    Only models with vision capability attempted these. AICommons gpt-4o was tested on all vision tasks.
+  </div>
+```
+
+```{ojs}
+{
+  const mm_cats = ["ocr","document_extraction","vision_qa"];
+  const mm_rows = canonical_tests.filter(d => mm_cats.includes(d.category));
+
+  if (mm_rows.length === 0)
+    return htl.html`<p style="color:#8b949e">No multimodal data.</p>`;
+
+  const mm_model_keys = [...new Set(mm_rows.map(r => r.service+"|||"+r.model))];
+  const mm_test_ids   = [...new Set(mm_rows.map(r => r.test_id))].sort((a,b) => {
+    const ca = mm_rows.find(r=>r.test_id===a)?.category||"";
+    const cb = mm_rows.find(r=>r.test_id===b)?.category||"";
+    const ci = cat_order.indexOf(ca) - cat_order.indexOf(cb);
+    return ci !== 0 ? ci : a.localeCompare(b);
+  });
+
+  const lookup = new Map();
+  mm_rows.forEach(r => lookup.set(r.service+"|||"+r.model+"|||"+r.test_id, r));
+
+  const cellW=42, cellH=26, cellGap=3;
+  const labelW=220, labelH=68;
+  const totalW = labelW + mm_test_ids.length*(cellW+cellGap)+20;
+  const totalH = labelH + mm_model_keys.length*(cellH+cellGap)+50;
+
+  const svg = d3.create("svg")
+    .attr("width",totalW).attr("height",totalH)
+    .style("font-family","-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif");
+
+  // Column headers
+  mm_test_ids.forEach((tid,ti) => {
+    const cx = labelW + ti*(cellW+cellGap);
+    const cat = mm_rows.find(r=>r.test_id===tid)?.category||"";
+    svg.append("text")
+      .attr("transform",`translate(${cx+cellW/2},${labelH-6}) rotate(-40)`)
+      .attr("text-anchor","start").attr("font-size",9).attr("fill","#8b949e")
+      .text(tid);
+    // Category band dot
+    svg.append("circle").attr("cx",cx+cellW/2).attr("cy",8).attr("r",4)
+      .attr("fill", cat==="ocr"?"#d29922":cat==="document_extraction"?"#3fb950":"#bc8cff")
+      .attr("opacity",0.8);
+  });
+
+  // Category dot legend
+  [["OCR","#d29922"],["Doc. Extraction","#3fb950"],["Vision QA","#bc8cff"]].forEach(([l,c],i)=>{
+    svg.append("circle").attr("cx",labelW+i*130).attr("cy",22).attr("r",5).attr("fill",c).attr("opacity",0.8);
+    svg.append("text").attr("x",labelW+i*130+9).attr("y",26).attr("font-size",9.5).attr("fill","#8b949e").text(l);
+  });
+
+  mm_model_keys.forEach((mk,mi) => {
+    const ry = labelH + mi*(cellH+cellGap);
+    const parts = mk.split("|||");
+    const svc = parts[0];
+
+    if (mi%2===0) {
+      svg.append("rect").attr("x",0).attr("y",ry-1)
+        .attr("width",totalW).attr("height",cellH+2)
+        .attr("fill","rgba(255,255,255,0.015)").attr("rx",2);
+    }
+
+    svg.append("text")
+      .attr("x",labelW-8).attr("y",ry+cellH/2+4)
+      .attr("text-anchor","end").attr("font-size",10.5)
+      .attr("fill",service_colors[svc])
+      .text(service_labels[svc]+" / "+parts[1]);
+
+    mm_test_ids.forEach((tid,ti) => {
+      const cx = labelW + ti*(cellW+cellGap);
+      const key = mk+"|||"+tid;
+      const entry = lookup.get(key);
+      const score = entry ? entry.score : null;
+
+      svg.append("rect").attr("x",cx).attr("y",ry)
+        .attr("width",cellW).attr("height",cellH).attr("rx",3)
+        .attr("fill", score!==null ? scoreColor(score) : "#161b22");
+
+      svg.append("text")
+        .attr("x",cx+cellW/2).attr("y",ry+cellH/2+4)
+        .attr("text-anchor","middle").attr("font-size",10).attr("font-weight",score>=5?700:400)
+        .attr("fill",scoreTextColor(score))
+        .text(score!==null ? String(score) : "—");
+    });
+  });
+
+  // Score legend
+  const ly = totalH - 28;
+  const legItems = [[5,"#1a7f37","5"],[4,"#1d6fa0","4"],[3,"#9a6700","3"],[2,"#a0400a","2"],[1,"#6e0f0a","1"],[null,"#161b22","No data"]];
+  let lx = labelW;
+  legItems.forEach(([v,c,label])=>{
+    svg.append("rect").attr("x",lx).attr("y",ly).attr("width",13).attr("height",13).attr("rx",2).attr("fill",c);
+    svg.append("text").attr("x",lx+16).attr("y",ly+10).attr("font-size",9.5).attr("fill","#8b949e").text(label);
+    lx += 50;
+  });
+
+  return svg.node();
+}
+```
+
+```{=html}
+</div>
+```
+
+---
+
+## Category Overview
+
+```{=html}
+<p class="section-subheading">
+  Summary statistics for each benchmark category across all evaluated models.
+</p>
+<div class="chart-card" style="padding:0.5rem">
+```
+
+```{ojs}
+{
+  // Aggregate by category
+  const agg = new Map();
+  for (const r of canonical_tests) {
+    if (!agg.has(r.category)) agg.set(r.category, []);
+    agg.get(r.category).push(r.score);
+  }
+
+  const rows = cat_order
+    .filter(c => agg.has(c))
+    .map(c => {
+      const scores = agg.get(c);
+      const n  = scores.length;
+      const mean = scores.reduce((a,b)=>a+b,0)/n;
+      const pct5 = Math.round(scores.filter(x=>x===5).length/n*100);
+      const min  = Math.min(...scores);
+      return { cat: c, n, mean, pct5, min };
+    });
+
+  const html = `
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th>Category</th>
+        <th style="text-align:right">Tasks Run</th>
+        <th style="text-align:right">Mean Score</th>
+        <th style="text-align:right">% Perfect (5)</th>
+        <th style="text-align:right">Min Score</th>
+        <th>Distribution</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r => {
+          const scoreClass = r.mean >= 4.5 ? "score-5" : r.mean >= 3.5 ? "score-4" : "score-3";
+          // Mini bar
+          const bw = Math.round(r.pct5 * 1.4);
+          const minibar = `<div style="display:flex;align-items:center;gap:6px">
+            <div style="width:140px;height:10px;background:#1c2128;border-radius:5px;overflow:hidden">
+              <div style="width:${bw}px;height:10px;background:#1a7f37;border-radius:5px"></div>
+            </div>
+            <span style="font-size:0.78rem;color:#6e7681">${r.pct5}% scored 5</span>
+          </div>`;
+          return `<tr>
+            <td style="font-weight:600">${cat_labels_map[r.cat]}</td>
+            <td style="text-align:right;color:#8b949e">${r.n}</td>
+            <td style="text-align:right"><span class="${scoreClass}">${r.mean.toFixed(2)}</span></td>
+            <td style="text-align:right;color:#8b949e">${r.pct5}%</td>
+            <td style="text-align:right;color:${r.min<=2?'#f85149':'#8b949e'}">${r.min}</td>
+            <td>${minibar}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>`;
+  return htl.html([html]);
+}
+```
+
+```{=html}
+</div>
+```
