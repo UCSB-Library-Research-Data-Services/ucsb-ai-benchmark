@@ -52,4 +52,8 @@ EXCLUDED_MODELS = [
     "deepseek-v4-flash:cloud",
     "glm-5.2:cloud",
     "gemini-embedding-2",
+    # aicommons internal bots / agent IDs — not LLMs available for benchmarking
+    "01KXPE96MJ1B5MYM9RAXVTFY9S",
+    "01KSNH04J1E35CH4KJDD8GPQFM",
+    "01KWZDN042XGHVSXPZKNWW0KY5",
 ]
