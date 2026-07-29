@@ -1,0 +1,34 @@
+[
+  {
+    "id": "code_gen_hard_1",
+    "category": "code_generation",
+    "prompt": "Write a Python script using pandas and scikit-learn. First, generate a dataset of 100 samples with features 'A' and 'B', and a binary target 'target'. Introduce some NaN values in 'A'. Impute the NaN values in 'A' using the mean. Train a LogisticRegression model and print the model's accuracy score. Output ONLY the python code inside a markdown code block, no explanations.",
+    "expected_behavior": "executes_cleanly_with_numeric_output"
+  },
+  {
+    "id": "metadata_gen_hard_1",
+    "category": "metadata_generation",
+    "prompt": "Convert the following abstract into a nested JSON structure representing an academic paper. The abstract: 'We propose a novel framework for distributed learning over unreliable networks. Our method, DropNet, reduces communication overhead by 40% compared to FedAvg. Authors: Alice Smith, Bob Jones. Affiliation: UCSB. Year: 2026.' The JSON must include an 'article' key containing 'title' (inferred), 'authors' (as a list of objects with 'name' and 'affiliation'), 'year', and 'metrics' (an object with 'communication_overhead_reduction' as a number). Output MUST be ONLY valid JSON.",
+    "expected_schema_keys": ["article"]
+  },
+  {
+    "id": "lit_synthesis_hard_1",
+    "category": "literature_synthesis",
+    "prompt": "Contrast the findings of these two abstracts. Abstract 1: 'We observed that ocean acidification (pH 7.8) severely reduced coral calcification rates by 30% over 6 months.' Abstract 2: 'Our 12-month study found that coral calcification rates remained stable under pH 7.8, showing unexpected resilience due to prior thermal stress exposure.' Format the output as a JSON object with keys 'abstract_1_finding', 'abstract_2_finding', and 'key_difference'.",
+    "judge_rubric": "Score 1-5 based on Accuracy. 5 means perfect extraction of both findings (Abstract 1: 30% reduction; Abstract 2: stable/resilience) and correctly identifying the key difference (sensitivity vs resilience). Deduct points for missing details or hallucinations. Ensure the output is valid JSON."
+  },
+  {
+    "id": "ocr_1",
+    "category": "ocr",
+    "prompt": "Transcribe the table titled 'AFECCIONES METEOROLOGICAS DE ANTES DE AYER' from the provided image. Format the output strictly as a Markdown table.",
+    "image_path": "images/dmcz_18250101_page_1.png",
+    "judge_rubric": "Score 1-5 based on OCR Accuracy. Compare against the ground truth. 5 means perfect Markdown table containing columns for 'Epocas del dia', 'Barómetro', 'Termóm', 'Vientos', and 'Atmósfera'. Deduct points for missing rows, hallucinated data, or incorrect table formatting."
+  },
+  {
+    "id": "vision_qa_1",
+    "category": "vision_qa",
+    "prompt": "What is the year of publication on this cover page? Answer strictly with the 4 digits.",
+    "image_path": "images/CCundinamarca_page_1.png",
+    "expected_exact_match": "1811"
+  }
+]
