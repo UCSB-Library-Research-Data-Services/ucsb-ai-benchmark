@@ -1,0 +1,52 @@
+[
+  {
+    "id": "ocr_1",
+    "category": "ocr",
+    "image_path": "images/dmcz_18250101_page_1.png",
+    "prompt": "This is a scanned page from a 19th-century Spanish-language newspaper. It contains a table titled 'AFECCIONES METEOROLOGICAS DE ANTES DE AYER' with 5 columns: 'Epocas del dia', 'Barómetro', 'Termóm', 'Vientos', and 'Atmósfera'. Extract the table content and return it as a JSON array of row objects. Each object must have exactly these keys: 'epoca', 'barometro', 'termom', 'vientos', 'atmosfera'. Output ONLY the JSON array, no other text.",
+    "judge_rubric": "Score 1-5 based on accuracy of the OCR extraction. 5 means all 3 rows are extracted with correct values: Row 1 (A las 9 de la mañana: barometro=30,3,70, termom=57.5, vientos=N, atmosfera=Claro), Row 2 (A las 12 del dia: barometro=30,3,58, termom=59.0, vientos=Id, atmosfera=Idem), Row 3 (A las 6 de la tarde: barometro=30,3,51, termom=58.0, vientos=SE, atmosfera=Idem). Deduct 1 point for each row with significant errors. Score 1 if the model hallucinates a completely different table or refuses to extract.",
+    "ground_truth_rows": [
+      {"epoca": "A las 9 de la mañana",  "barometro": "30, 3, 70", "termom": "57.5", "vientos": "N",   "atmosfera": "Claro"},
+      {"epoca": "A las 12 del dia",       "barometro": "30, 3, 58", "termom": "59.0", "vientos": "Id",  "atmosfera": "Idem"},
+      {"epoca": "A las 6 de la tarde",    "barometro": "30, 3, 51", "termom": "58.0", "vientos": "SE",  "atmosfera": "Idem"}
+    ],
+    "key_fields": ["barometro", "termom", "vientos", "atmosfera"]
+  },
+  {
+    "id": "ocr_2",
+    "category": "ocr",
+    "image_path": "images/dmcz_18250101_page_1.png",
+    "prompt": "This is a scanned page from a 19th-century Spanish-language newspaper. Look for any dates, publication information, or newspaper title visible on the page. Extract this bibliographic information and return it as a JSON object with keys: 'newspaper_title', 'date', 'location'. If a field is not visible, set its value to null. Output ONLY the JSON object.",
+    "judge_rubric": "Score 1-5 based on how accurately the model extracts bibliographic metadata from a 19th-century newspaper page. 5 means the model correctly identifies visible date/publication information without hallucinating. Score 3 if the model extracts partial information (e.g. only the date). Score 1 if the model hallucinates values not visible in the image or refuses to attempt extraction. The output must be valid JSON with the required keys.",
+    "ground_truth_rows": [],
+    "key_fields": []
+  },
+  {
+    "id": "document_extraction_1",
+    "category": "document_extraction",
+    "image_path": "images/coleccion-mc_060.jpg",
+    "prompt": "This is the back of a historical document or catalogue card. Extract all visible structured information from the image. Return a JSON object containing every distinct piece of information you can read, using descriptive key names (e.g. 'catalogue_number', 'date', 'title', 'notes', 'stamp', 'handwritten_text', etc.). If text is partially legible, include your best reading with a '_confidence': 'low' sibling key. Output ONLY the JSON object.",
+    "judge_rubric": "Score 1-5 based on completeness and accuracy of extraction from a historical document card back. 5 means the model extracts all visible structured elements (any catalogue references, dates, stamps, handwritten annotations, printed fields) without hallucinating content not present in the image. Score 3 if the model extracts some but not all visible elements. Score 2 if the output is valid JSON but mostly hallucinated. Score 1 if the model returns invalid JSON or refuses. Judge: be lenient on exact spelling of handwritten text but penalise invented fields."
+  },
+  {
+    "id": "vision_qa_1",
+    "category": "vision_qa",
+    "image_path": "images/dmcz_18250101_page_1.png",
+    "prompt": "Look at this scanned newspaper page. What is the wind direction recorded at 6 in the afternoon ('A las 6 de la tarde')? Output ONLY the abbreviation as it appears in the table.",
+    "expected_exact_match": "SE"
+  },
+  {
+    "id": "vision_qa_2",
+    "category": "vision_qa",
+    "image_path": "images/dmcz_18250101_page_1.png",
+    "prompt": "Look at this scanned newspaper page. What is the thermometer reading ('Termóm') recorded at noon ('A las 12 del dia')? Output ONLY the numeric value as it appears in the table.",
+    "expected_exact_match": "59.0"
+  },
+  {
+    "id": "vision_qa_3",
+    "category": "vision_qa",
+    "image_path": "images/coleccion-mc_060.jpg",
+    "prompt": "Look at this image of a historical document. How many distinct sections or labeled fields can you count on this document? Output ONLY an integer.",
+    "expected_exact_match": "judge"
+  }
+]
