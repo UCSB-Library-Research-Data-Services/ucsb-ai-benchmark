@@ -26,10 +26,14 @@ class TokenTracker:
         """Returns the current month in YYYY-MM format to group usage."""
         return datetime.now().strftime("%Y-%m")
 
-    def add_usage(self, service: str, model: str, usage_obj) -> None:
+    def add_usage(self, service: str, model: str, usage_obj, autosave: bool = True) -> None:
         """
         Takes an OpenAI Usage object and records the tokens.
         usage_obj is typically expected to have .prompt_tokens and .completion_tokens
+
+        Set autosave=False when calling in a tight loop (e.g. once per task inside a
+        model iteration) and call save() manually at the end of each model's test loop
+        to avoid thrashing the disk with a write on every single task.
         """
         if not usage_obj:
             return
@@ -67,6 +71,15 @@ class TokenTracker:
         srv_data["models"][model]["completion_tokens"] += completion_tokens
         srv_data["models"][model]["total_tokens"] += total_tokens
 
+        if autosave:
+            self._save_data()
+
+    def save(self) -> None:
+        """Explicitly flush in-memory usage data to disk.
+
+        Call this at the end of each model's test loop when using
+        autosave=False in add_usage() to batch disk writes.
+        """
         self._save_data()
 
     def get_service_usage(self, service: str) -> int:

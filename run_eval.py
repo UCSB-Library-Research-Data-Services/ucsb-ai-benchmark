@@ -32,33 +32,40 @@ def generate_summary_csv(json_path="results_log.json", csv_path="results_summary
                 "category": row['category'],
                 "total_tests": 0,
                 "total_score": 0,
-                "avg_tps": 0.0,
-                "tps_samples": 0
+                "total_tps": 0.0,
+                "tps_samples": 0,
+                "total_latency": 0.0,
+                "latency_samples": 0,
             }
-        
+
         summary[key]['total_tests'] += 1
         summary[key]['total_score'] += row['score']
         if row.get('tps', 0) > 0:
-            summary[key]['avg_tps'] += row['tps']
+            summary[key]['total_tps'] += row['tps']
             summary[key]['tps_samples'] += 1
+        if row.get('latency_sec', 0) > 0:
+            summary[key]['total_latency'] += row['latency_sec']
+            summary[key]['latency_samples'] += 1
 
     # Write CSV
     with open(csv_path, 'w', newline='') as csvfile:
-        fieldnames = ['service', 'model', 'category', 'tests_run', 'avg_score', 'avg_tps']
+        fieldnames = ['service', 'model', 'category', 'tests_run', 'avg_score', 'avg_latency_sec', 'avg_tps']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        
+
         writer.writeheader()
         for key, stats in summary.items():
             avg_score = stats['total_score'] / stats['total_tests'] if stats['total_tests'] > 0 else 0
-            avg_tps = stats['avg_tps'] / stats['tps_samples'] if stats['tps_samples'] > 0 else 0
-            
+            avg_tps = stats['total_tps'] / stats['tps_samples'] if stats['tps_samples'] > 0 else 0
+            avg_latency = stats['total_latency'] / stats['latency_samples'] if stats['latency_samples'] > 0 else 0
+
             writer.writerow({
                 'service': stats['service'],
                 'model': stats['model'],
                 'category': stats['category'],
                 'tests_run': stats['total_tests'],
                 'avg_score': round(avg_score, 2),
-                'avg_tps': round(avg_tps, 2)
+                'avg_latency_sec': round(avg_latency, 2),
+                'avg_tps': round(avg_tps, 2),
             })
     print(f"Summary saved to {csv_path}")
 

@@ -3,46 +3,83 @@ import subprocess
 import tempfile
 import logging
 import re
+import sys
 from openai import OpenAI
 
 def extract_code_block(text: str) -> str:
-    """Extracts code from a markdown code block."""
-    match = re.search(r"```(?:python)?(.*?)```", text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
+    """Extracts the first meaningful code block from a markdown-fenced response.
+
+    Handles:
+    - ```python ... ``` fences (with or without language tag)
+    - Responses with multiple fences (takes the largest/first real code block)
+    - Plain text with no fencing (returned as-is)
+    """
+    # Match ```<optional lang>\n<code>\n``` — requires at least one non-whitespace char
+    pattern = re.compile(r"```(?:[a-zA-Z0-9_+-]*)?\n(.*?)```", re.DOTALL)
+    matches = pattern.findall(text)
+    if matches:
+        # Return the longest match to avoid grabbing a tiny inline snippet
+        return max(matches, key=len).strip()
     return text.strip()
 
 def score_programmatic_code(response_text: str) -> dict:
-    """Safely executes python code using subprocess and checks for errors."""
+    """Safely executes python code using subprocess and checks for errors.
+
+    Uses sys.executable so the code runs inside the same venv that has pandas/numpy
+    installed, rather than the system python3 which may be missing dependencies.
+
+    Beyond a clean exit code, it also validates that the script actually printed a
+    numeric result — ensuring the model computed the required mean() rather than
+    just generating no-op boilerplate that happens to run without errors.
+    """
     code = extract_code_block(response_text)
-    
-    # Create a dummy CSV for pandas to load so the script doesn't fail on missing file
-    dummy_csv = "temperature,pressure\n15,1000\n25,1010\n"
-    
+
+    # Create a dummy CSV for pandas to load so the script doesn't fail on missing file.
+    # Values are chosen so the expected output is deterministic and easy to validate:
+    # rows with temperature > 20 → [25, 30], pressure mean = (1010 + 1020) / 2 = 1015.0
+    dummy_csv = "temperature,pressure\n15,1000\n25,1010\n30,1020\n"
+
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_path = f"{tmpdir}/data.csv"
         script_path = f"{tmpdir}/script.py"
-        
+
         with open(csv_path, "w") as f:
             f.write(dummy_csv)
-            
-        # modify code to point to the tmp csv if they used 'data.csv'
+
+        # Redirect any hardcoded 'data.csv' reference to the temp file path
         code = code.replace("'data.csv'", f"'{csv_path}'").replace('"data.csv"', f'"{csv_path}"')
-        
+
         with open(script_path, "w") as f:
             f.write(code)
-            
+
         try:
             result = subprocess.run(
-                ["python3", script_path], 
-                capture_output=True, 
-                text=True, 
-                timeout=5
+                [sys.executable, script_path],   # use the venv Python, not system python3
+                capture_output=True,
+                text=True,
+                timeout=10
             )
-            if result.returncode == 0:
-                return {"score": 5, "reason": "Execution successful", "output": result.stdout.strip()}
-            else:
+            if result.returncode != 0:
                 return {"score": 1, "reason": f"Execution failed: {result.stderr.strip()}", "output": ""}
+
+            stdout = result.stdout.strip()
+
+            # Semantic check: the script must print at least one numeric value.
+            # A model that generates `print("hello")` or no print at all scores 3/5
+            # (code is syntactically valid but produces no useful output).
+            numeric_pattern = re.compile(r"\d+(\.\d+)?")
+            if not numeric_pattern.search(stdout):
+                return {
+                    "score": 3,
+                    "reason": (
+                        "Execution successful but no numeric output detected. "
+                        "The script may not have printed the computed mean."
+                    ),
+                    "output": stdout,
+                }
+
+            return {"score": 5, "reason": "Execution successful with numeric output", "output": stdout}
+
         except subprocess.TimeoutExpired:
             return {"score": 1, "reason": "Execution timed out", "output": ""}
         except Exception as e:
@@ -63,11 +100,29 @@ def score_programmatic_metadata(response_text: str, expected_keys: list) -> dict
         return {"score": 0, "reason": "Output is not valid JSON"}
 
 def score_exact_match(response_text: str, expected_match: str) -> dict:
-    """Checks for an exact string match (useful for multiple choice)."""
-    # Just look for the expected letter in the first few characters to be generous
-    if expected_match.lower() in response_text.strip()[:10].lower():
-         return {"score": 5, "reason": f"Matched exact expected answer: {expected_match}"}
-    return {"score": 1, "reason": f"Expected {expected_match}, got {response_text.strip()[:20]}"}
+    """Checks that the response selects the correct multiple-choice letter.
+
+    Accepts common model answer formats, e.g.:
+      "C", "C)", "The answer is C", "C. Temp vs Humidity"
+    while rejecting responses that merely mention the letter in passing.
+    A regex anchors the expected letter at the very start of the stripped
+    response or after an explicit "answer is / answer:" preamble.
+    """
+    text = response_text.strip()
+    letter = re.escape(expected_match.upper())
+
+    # Pattern 1: letter stands alone at the start — followed only by punctuation
+    #   (). : \n) or end-of-string.  We deliberately do NOT allow a trailing space
+    #   because "C is wrong..." starts with "C " and must not match.
+    # Pattern 2: letter follows a common preamble (e.g. "The answer is C" / "Answer: C")
+    pattern = re.compile(
+        rf"(?:^{letter}(?:[).:\n]|$)|(?:answer(?:\s+is)?|the\s+answer\s+is)\s*:?\s*{letter}\b)",
+        re.IGNORECASE,
+    )
+
+    if pattern.search(text):
+        return {"score": 5, "reason": f"Matched expected answer: {expected_match}"}
+    return {"score": 1, "reason": f"Expected '{expected_match}', got: '{text[:40]}'"}
 
 def score_with_judge(
     target_response: str, 

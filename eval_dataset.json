@@ -2,7 +2,19 @@
   {
     "id": "code_gen_1",
     "category": "code_generation",
-    "prompt": "Write a Python script using pandas to load 'data.csv', filter for rows where the column 'temperature' is greater than 20, and calculate the mean of the 'pressure' column. Assume the CSV has headers. Output ONLY the python code inside a markdown code block, no explanations.",
+    "prompt": "Write a Python script using pandas to load 'data.csv', filter for rows where the column 'temperature' is greater than 20, and calculate the mean of the 'pressure' column for those rows. Print the result. Assume the CSV has headers. Output ONLY the python code inside a markdown code block, no explanations.",
+    "expected_behavior": "executes_cleanly"
+  },
+  {
+    "id": "code_gen_2",
+    "category": "code_generation",
+    "prompt": "Write a Python script using pandas to load 'data.csv' and compute the standard deviation of the 'pressure' column. Print the result rounded to 2 decimal places. Assume the CSV has headers 'temperature' and 'pressure'. Output ONLY the python code inside a markdown code block, no explanations.",
+    "expected_behavior": "executes_cleanly"
+  },
+  {
+    "id": "code_gen_3",
+    "category": "code_generation",
+    "prompt": "Write a Python script using pandas to load 'data.csv', group the rows by whether 'temperature' is above or below 20, and print the count of rows in each group. Assume the CSV has headers 'temperature' and 'pressure'. Output ONLY the python code inside a markdown code block, no explanations.",
     "expected_behavior": "executes_cleanly"
   },
   {
@@ -12,15 +24,51 @@
     "expected_schema_keys": ["title", "creator", "publicationYear", "publisher"]
   },
   {
+    "id": "metadata_gen_2",
+    "category": "metadata_generation",
+    "prompt": "Generate a DataCite-style metadata JSON object for a dataset titled 'Climate Model Projections 2100', with resourceType 'Dataset', creator 'Dr. Alice Chen', publicationYear '2025', publisher 'UCSB Earth Research Institute', and a description field summarizing the dataset in one sentence. The output MUST be ONLY valid JSON containing keys: 'title', 'resourceType', 'creator', 'publicationYear', 'publisher', and 'description'.",
+    "expected_schema_keys": ["title", "resourceType", "creator", "publicationYear", "publisher", "description"]
+  },
+  {
+    "id": "metadata_gen_3",
+    "category": "metadata_generation",
+    "prompt": "A researcher collected seismic sensor data in Santa Barbara County during Q1 2024. The principal investigator is 'Dr. Marco Ruiz' and the data is hosted by the 'UCSB Geosciences Dataverse'. Generate a JSON metadata object with the following keys: 'title', 'creator', 'subject', 'publicationYear', 'publisher', and 'geographicCoverage'. The output MUST be ONLY valid JSON.",
+    "expected_schema_keys": ["title", "creator", "subject", "publicationYear", "publisher", "geographicCoverage"]
+  },
+  {
     "id": "lit_synthesis_1",
     "category": "literature_synthesis",
     "prompt": "Extract the primary methodology, species studied, and main conclusion from this abstract: 'We investigated the foraging behavior of the sea otter (Enhydra lutris) in kelp forests along the California coast. Using GPS tracking and direct observation over two years, we found that sea otters disproportionately prey on purple sea urchins in areas with declining kelp density. This suggests a targeted top-down control mechanism that could aid kelp restoration.' Format the output as a JSON object with keys 'methodology', 'species', and 'conclusion'.",
-    "judge_rubric": "Score 1-5 based on Accuracy. 5 means perfect extraction (Methodology: GPS tracking and observation. Species: sea otter / Enhydra lutris. Conclusion: top-down control aids kelp restoration). Deduct points for missing details or hallucinations. Ensure the output is valid JSON."
+    "judge_rubric": "Score 1-5 based on Accuracy. 5 means perfect extraction (Methodology: GPS tracking and direct observation. Species: sea otter / Enhydra lutris. Conclusion: top-down control via urchin predation aids kelp restoration). Deduct 1 point for each missing or hallucinated detail. Deduct 1 additional point if the output is not valid JSON."
+  },
+  {
+    "id": "lit_synthesis_2",
+    "category": "literature_synthesis",
+    "prompt": "Extract the primary methodology, key finding, and limitations from this abstract: 'This study examined microplastic concentrations in surface water samples collected from six sites along the Santa Barbara Channel. Using Fourier-transform infrared spectroscopy (FTIR) on 120 water samples, we identified polyethylene as the dominant polymer type, with concentrations peaking near storm drain outfalls. However, the study was limited by a short sampling window of 30 days and a lack of seasonal replication.' Format the output as a JSON object with keys 'methodology', 'key_finding', and 'limitations'.",
+    "judge_rubric": "Score 1-5 based on Accuracy. 5 means perfect extraction (Methodology: FTIR spectroscopy on 120 water samples. Key finding: polyethylene dominant near storm drain outfalls. Limitations: 30-day window and no seasonal replication). Deduct 1 point for each missing or hallucinated field. Deduct 1 additional point if the output is not valid JSON."
+  },
+  {
+    "id": "lit_synthesis_3",
+    "category": "literature_synthesis",
+    "prompt": "Extract the research question, methods, and conclusion from this abstract: 'We asked whether elevated CO2 levels (800 ppm) affect the calcification rate of the coral Acropora millepora under controlled laboratory conditions. Using alkalinity anomaly titration across 48 coral colonies over 12 weeks, we found a statistically significant 23% reduction in calcification rate compared to controls at 400 ppm (p < 0.01). These results support projections that ocean acidification poses a severe threat to tropical coral reef ecosystems.' Format the output as a JSON object with keys 'research_question', 'methods', and 'conclusion'.",
+    "judge_rubric": "Score 1-5 based on Accuracy. 5 means perfect extraction (Research question: effect of 800 ppm CO2 on calcification of Acropora millepora. Methods: alkalinity anomaly titration, 48 colonies, 12 weeks. Conclusion: 23% reduction in calcification, supporting threat of ocean acidification). Deduct 1 point for each missing or inaccurate detail. Deduct 1 additional point if the output is not valid JSON."
   },
   {
     "id": "data_interp_1",
     "category": "data_interpretation",
     "prompt": "Here is a correlation matrix for atmospheric variables: \nTemp vs Humidity: -0.65\nTemp vs Pressure: 0.12\nHumidity vs Pressure: -0.22\n\nWhich relationship shows the strongest negative correlation?\nA) Temp vs Pressure\nB) Humidity vs Pressure\nC) Temp vs Humidity\nD) None of the above\n\nOutput ONLY the letter corresponding to the correct answer.",
     "expected_exact_match": "C"
+  },
+  {
+    "id": "data_interp_2",
+    "category": "data_interpretation",
+    "prompt": "A regression model predicting species richness from habitat area produces the following output:\n- R-squared: 0.81\n- p-value for habitat area coefficient: 0.003\n- Coefficient for habitat area: 4.7\n\nWhich of the following is the most accurate interpretation?\nA) Habitat area explains 81% of variance in species richness and the relationship is statistically significant.\nB) Habitat area explains 81% of variance but the relationship is not statistically significant.\nC) The model is overfit because R-squared is too high.\nD) A one-unit increase in habitat area is associated with a 0.003 increase in species richness.\n\nOutput ONLY the letter corresponding to the correct answer.",
+    "expected_exact_match": "A"
+  },
+  {
+    "id": "data_interp_3",
+    "category": "data_interpretation",
+    "prompt": "An oceanography dataset has the following summary statistics for sea surface temperature (SST) in degrees Celsius:\n- Mean: 18.4\n- Median: 17.9\n- Standard Deviation: 3.2\n- Minimum: 11.1\n- Maximum: 31.6\n\nWhich statement is best supported by these statistics?\nA) The SST distribution is perfectly symmetric.\nB) The SST distribution is slightly right-skewed, as the mean is higher than the median.\nC) The SST distribution is left-skewed because the minimum is far from the mean.\nD) The standard deviation indicates that all values are within 3.2 degrees of the mean.\n\nOutput ONLY the letter corresponding to the correct answer.",
+    "expected_exact_match": "B"
   }
 ]
