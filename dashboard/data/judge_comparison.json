@@ -1,0 +1,602 @@
+[
+  {
+    "service": "grit",
+    "model": "gemma4:31b",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the methodology, species, and conclusion as specified in the rubric, and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. Methodology is correctly identified as 'GPS tracking and direct observation'. Species is correctly identified as 'sea otter (Enhydra lutris)'. Conclusion accurately captures the top-down control via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "gemma4:31b",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations from the abstract and formatted them in a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted with no hallucinations. Methodology correctly identifies FTIR spectroscopy on 120 water samples. Key finding correctly states polyethylene dominance near storm drain outfalls. Limitations correctly captures the 30-day window and lack of seasonal replication. Output is valid JSON."
+  },
+  {
+    "service": "grit",
+    "model": "gemma4:31b",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 4,
+    "reason_gemini": "The model output is missing the specific finding of a 23% reduction in calcification in the conclusion.",
+    "score_claude": 4,
+    "reason_claude": "The output is valid JSON. The research question is accurately extracted. The methods are accurately extracted including all key details (alkalinity anomaly titration, 48 colonies, 12 weeks). The conclusion is partially accurate but missing the specific quantitative finding of a 23% reduction in calcification rate compared to controls at 400 ppm (p < 0.01), which is a key detail. The conclusion only captures the broader implication without the specific result, warranting a 1-point deduction."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3.5:latest",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, species, and conclusion in the requested JSON format without any missing or hallucinated details.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies both sea otter (Enhydra lutris) and purple sea urchins. Conclusion accurately captures the top-down control mechanism via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3.5:latest",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations from the abstract and formatted them into a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted and present. Methodology correctly identifies FTIR spectroscopy on 120 water samples from six sites. Key finding correctly identifies polyethylene as dominant near storm drain outfalls. Limitations correctly identifies the 30-day window and lack of seasonal replication. Output is valid JSON."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3.5:latest",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 4,
+    "reason_gemini": "The model output is missing the '23% reduction in calcification' detail in the conclusion.",
+    "score_claude": 4,
+    "reason_claude": "The output is valid JSON. The research question is accurately and completely extracted. The methods section is accurately extracted with all key details (alkalinity anomaly titration, 48 colonies, 12 weeks). The conclusion is partially extracted \u2014 it captures the ocean acidification threat but omits the specific 23% reduction in calcification rate (p < 0.01) compared to controls at 400 ppm, which is a key quantitative finding. One point deducted for this missing detail."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3-coder-next:latest",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, species, and conclusion as required by the rubric, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies 'sea otter (Enhydra lutris)'. Conclusion accurately captures the top-down control via urchin predation aiding kelp restoration, including the detail about declining kelp density areas. No missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3-coder-next:latest",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations from the abstract and formatted them in a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted with no hallucinations. The methodology correctly identifies FTIR spectroscopy on 120 water samples. The key finding correctly states polyethylene as dominant near storm drain outfalls. The limitations correctly capture the 30-day window and lack of seasonal replication. The output is valid JSON."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3-coder-next:latest",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted all required details for the research question, methods, and conclusion, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled laboratory conditions. The methods section correctly identifies alkalinity anomaly titration, 48 coral colonies, and 12 weeks, with the added detail of the control comparison (400 ppm). The conclusion accurately states the 23% reduction in calcification rate with the p-value and supports the ocean acidification threat to coral reef ecosystems. All key details are present and accurate."
+  },
+  {
+    "service": "grit",
+    "model": "mistral:latest",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the methodology, species, and conclusion in a valid JSON format without any missing or hallucinated details.",
+    "score_claude": 4,
+    "reason_claude": "The methodology is correctly extracted as 'GPS tracking and direct observation over two years'. The species includes both sea otter (Enhydra lutris) and purple sea urchins, which is accurate and arguably more complete than the rubric's baseline. The conclusion is accurately captured. However, the JSON object is missing the closing brace '}', making it technically invalid JSON. One point is deducted for the invalid JSON format."
+  },
+  {
+    "service": "grit",
+    "model": "mistral:latest",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 4,
+    "reason_gemini": "The model successfully extracted all required fields with high accuracy, but the output is not valid JSON due to a missing closing brace.",
+    "score_claude": 4,
+    "reason_claude": "The output contains all three required fields with accurate information. Methodology correctly identifies FTIR spectroscopy on 120 water samples (though includes extra detail about six sites). Key finding correctly identifies polyethylene as dominant near storm drain outfalls. Limitations correctly states 30-day window and no seasonal replication. The JSON is technically invalid as it is missing the closing brace '}', which warrants a 1-point deduction."
+  },
+  {
+    "service": "grit",
+    "model": "mistral:latest",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts all required details for the research question, methods, and conclusion, and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled conditions. The methods section correctly identifies alkalinity anomaly titration, 48 coral colonies, and 12 weeks, with the added detail of the control comparison. The conclusion accurately states the 23% reduction in calcification rate with the p-value and supports the ocean acidification threat to coral reef ecosystems. No details are missing or inaccurate."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3-coder:latest",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, species, and conclusion as specified in the rubric, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies 'sea otter (Enhydra lutris)'. Conclusion accurately captures the top-down control via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3-coder:latest",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the methodology, key finding, and limitations from the abstract and formats them in a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted with no hallucinations. The methodology correctly identifies FTIR spectroscopy on 120 water samples from six sites. The key finding correctly states polyethylene as dominant near storm drain outfalls. The limitations correctly capture the 30-day window and lack of seasonal replication. The output is valid JSON."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3-coder:latest",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted all required details for the research question, methods, and conclusion, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled laboratory conditions. The methods correctly identify alkalinity anomaly titration, 48 coral colonies, and 12 weeks. The conclusion accurately states the 23% reduction in calcification rate with statistical significance (p < 0.01) and supports the threat of ocean acidification to coral reef ecosystems. No details are missing or inaccurate."
+  },
+  {
+    "service": "grit",
+    "model": "llama3.1:8b",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 4,
+    "reason_gemini": "The model hallucinated the scientific name of the purple sea urchin, which was not present in the source text.",
+    "score_claude": 4,
+    "reason_claude": "The methodology is correctly extracted as 'GPS tracking and direct observation over two years'. The primary species (sea otter / Enhydra lutris) is correctly identified, and including the secondary species (purple sea urchin) is a reasonable addition rather than a hallucination. The conclusion captures the top-down control mechanism and kelp restoration aid, though it slightly simplifies 'targeted top-down control mechanism' to 'key role in controlling'. The output is valid JSON. Minor deduction for slightly imprecise conclusion wording that omits the 'targeted' and 'top-down control mechanism' specificity from the rubric standard."
+  },
+  {
+    "service": "grit",
+    "model": "llama3.1:8b",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model successfully extracted all three fields with high accuracy and formatted them in a valid JSON structure.",
+    "score_claude": 4,
+    "reason_claude": "The output is valid JSON with all three required fields. The key_finding and limitations are accurately extracted. The methodology correctly identifies FTIR spectroscopy but omits the specific detail of '120 water samples', which is a minor but notable omission per the rubric's reference answer. One point deducted for this missing detail."
+  },
+  {
+    "service": "grit",
+    "model": "llama3.1:8b",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 4,
+    "reason_gemini": "The extracted content is perfectly accurate, but 1 point is deducted because the output contains conversational text, making the overall output invalid JSON.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled conditions. The methods section includes all key details: alkalinity anomaly titration, 48 coral colonies, 12 weeks, and comparison to 400 ppm controls. The conclusion accurately states the 23% reduction in calcification and the threat of ocean acidification to tropical coral reef ecosystems. No details are missing or inaccurate."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3:latest",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model successfully and accurately extracted all required information in the correct JSON format without any missing or hallucinated details.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies 'Enhydra lutris' (sea otter). Conclusion accurately captures the top-down control via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3:latest",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations in a valid JSON format.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted with no hallucinations. Methodology correctly identifies FTIR spectroscopy on 120 water samples. Key finding correctly states polyethylene dominance near storm drain outfalls. Limitations correctly captures the 30-day window and lack of seasonal replication. Output is valid JSON."
+  },
+  {
+    "service": "grit",
+    "model": "qwen3:latest",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the research question, methods, and conclusion with all required details and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled laboratory conditions. The methods correctly identify alkalinity anomaly titration, 48 coral colonies, and 12 weeks. The conclusion accurately states the 23% reduction in calcification rate with statistical significance (p < 0.01) compared to 400 ppm controls, and supports the threat of ocean acidification to coral reef ecosystems. No details are missing or inaccurate."
+  },
+  {
+    "service": "grit",
+    "model": "phi4:latest",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, species, and conclusion as required by the rubric, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology correctly identifies GPS tracking and direct observation (with the added detail of 'two years' which is accurate). Species correctly identifies sea otter/Enhydra lutris and also includes purple sea urchins, which is a reasonable addition. Conclusion accurately captures the top-down control mechanism via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "phi4:latest",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the methodology, key finding, and limitations as specified in the rubric and formats them in a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted with no hallucinations. Methodology correctly identifies FTIR spectroscopy on 120 water samples from six sites. Key finding correctly states polyethylene as dominant polymer near storm drain outfalls. Limitations correctly identifies the 30-day sampling window and lack of seasonal replication. Output is valid JSON."
+  },
+  {
+    "service": "grit",
+    "model": "phi4:latest",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 4,
+    "reason_gemini": "The model correctly extracted all required information, but placed the results (23% reduction in calcification) under the 'methods' key instead of the 'conclusion' key.",
+    "score_claude": 3,
+    "reason_claude": "The output is valid JSON (+0 deductions for format). However, the 'methods' field incorrectly includes the result (23% reduction, p < 0.01) which belongs in the conclusion, not methods. The actual methods details (alkalinity anomaly titration, 48 colonies, 12 weeks) are present but mixed with findings. The 'conclusion' field is missing the key quantitative finding (23% reduction in calcification rate) and the comparison to controls at 400 ppm, which are critical details. This results in 2 deductions: 1 for the methods field containing result data instead of pure methodology, and 1 for the conclusion missing the 23% reduction detail."
+  },
+  {
+    "service": "grit",
+    "model": "llama3:latest",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 4,
+    "reason_gemini": "The model successfully extracted all the required information, but included an extra species (purple sea urchins) that was not the primary subject of the study.",
+    "score_claude": 4,
+    "reason_claude": "The model correctly extracted all key details: methodology (GPS tracking and direct observation), species (sea otter/Enhydra lutris and purple sea urchins), and conclusion (top-down control aiding kelp restoration). The output is valid JSON. However, the values are arrays instead of strings, which is a minor formatting deviation from the expected structure with simple string values. No details are missing or hallucinated. Deducting 1 point for the structural deviation from expected format (arrays vs strings), though the JSON itself is technically valid."
+  },
+  {
+    "service": "grit",
+    "model": "llama3:latest",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations into a valid JSON structure with the correct keys.",
+    "score_claude": 4,
+    "reason_claude": "The output is valid JSON and contains all three required fields (methodology, key_finding, limitations) with accurate information. No hallucinated content is present. However, the rubric specifies simple string values for each key, while the model used nested objects and arrays instead of flat string values. This structural deviation from the expected format (e.g., 'methodology' should be a string like 'FTIR spectroscopy on 120 water samples' rather than a nested object) warrants a 1-point deduction. All factual content is accurate and complete."
+  },
+  {
+    "service": "grit",
+    "model": "llama3:latest",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted all required details for the research question, methods, and conclusion in a valid JSON format.",
+    "score_claude": 5,
+    "reason_claude": "The model correctly extracted all key details: research question includes effect of 800 ppm CO2 on calcification of Acropora millepora under controlled lab conditions; methods include alkalinity anomaly titration, 48 colonies, and 12 weeks; conclusion includes 23% reduction in calcification and support for ocean acidification threat. The output is valid JSON. The note at the end is slightly inaccurate (400 ppm IS mentioned in the abstract and IS included in the output), but this does not affect the extracted content itself."
+  },
+  {
+    "service": "grit",
+    "model": "llava:7b",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model successfully extracted all required information with perfect accuracy and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology is correctly identified as 'GPS tracking and direct observation'. Species is correctly identified as 'sea otter (Enhydra lutris)'. Conclusion accurately captures the top-down control via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "llava:7b",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 3,
+    "reason_gemini": "The output contains invalid JSON due to an escaped underscore and misses a key detail in the methodology.",
+    "score_claude": 4,
+    "reason_claude": "The output is valid JSON and correctly captures all three fields. The key_finding and limitations are accurately extracted. The methodology is mostly correct but includes a minor inaccuracy by not explicitly mentioning the 120 water samples count, and incorrectly frames the 30-day period as part of the methodology description rather than a limitation. The 30-day window is a limitation, not a methodology detail, so including it in methodology is slightly misleading. One point deducted for this inaccuracy/misplacement."
+  },
+  {
+    "service": "grit",
+    "model": "llava:7b",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 3,
+    "reason_gemini": "The model output contains invalid JSON formatting and misplaces a key finding in the methods section instead of the conclusion.",
+    "score_claude": 3,
+    "reason_claude": "The output is valid JSON (no deduction). The research question is accurately extracted. However, the methods field incorrectly includes the result ('23% reduction in calcification rate compared to controls at 400 ppm (p < 0.01)') which belongs in the conclusion, not methods \u2014 this is an inaccuracy/misplacement. The conclusion field is missing the key quantitative finding (23% reduction, p < 0.01) which was displaced into the methods field. This results in 2 deductions: one for the misplaced result in methods, and one for the incomplete conclusion missing the 23% reduction detail."
+  },
+  {
+    "service": "grit",
+    "model": "gemma3:latest",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, species, and conclusion as specified in the rubric and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. Methodology is correctly identified as 'GPS tracking and direct observation'. Species is correctly identified as 'Enhydra lutris (sea otter)'. Conclusion accurately captures the top-down control mechanism via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "gemma3:latest",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model successfully and accurately extracted the methodology, key finding, and limitations from the abstract, formatting them perfectly in a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted. Methodology correctly identifies FTIR spectroscopy on 120 water samples. Key finding correctly states polyethylene as dominant polymer near storm drain outfalls. Limitations correctly capture the 30-day window and lack of seasonal replication. Output is valid JSON."
+  },
+  {
+    "service": "grit",
+    "model": "gemma3:latest",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts all required details for the research question, methods, and conclusion, and formats them in a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora. The methods section correctly identifies alkalinity anomaly titration, 48 colonies, 12 weeks, and controlled laboratory conditions. The conclusion accurately states the 23% reduction in calcification rate with p < 0.01 and supports the ocean acidification threat to coral reef ecosystems. All key details are present and accurate."
+  },
+  {
+    "service": "grit",
+    "model": "deepseek-r1:latest",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, species, and conclusion as required by the rubric, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology correctly captures GPS tracking and direct observation (including the two-year duration). Species is correctly identified as Enhydra lutris (sea otter is implied). Conclusion accurately captures top-down control via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "deepseek-r1:latest",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model successfully extracted all three required fields accurately and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted. Methodology correctly identifies FTIR spectroscopy on 120 water samples. Key finding correctly identifies polyethylene as dominant polymer near storm drain outfalls. Limitations correctly identifies the 30-day sampling window and lack of seasonal replication. Output is valid JSON. No missing or hallucinated fields."
+  },
+  {
+    "service": "grit",
+    "model": "deepseek-r1:latest",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 4,
+    "reason_gemini": "The model successfully extracted the research question and methods, but omitted the specific '23% reduction' detail in the conclusion.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled laboratory conditions. The methods correctly identify alkalinity anomaly titration, 48 coral colonies, and 12 weeks. The conclusion includes the 23% reduction in calcification and the support for ocean acidification as a threat to coral reef ecosystems. All key details are present and accurate."
+  },
+  {
+    "service": "grit",
+    "model": "gpt-oss:20b",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted all required information and formatted it as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies 'sea otter (Enhydra lutris)'. Conclusion accurately reflects the top-down control via urchin predation aiding kelp restoration, with no missing or hallucinated details."
+  },
+  {
+    "service": "grit",
+    "model": "gpt-oss:20b",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations from the abstract and formatted them as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted with no hallucinations. Methodology correctly identifies FTIR spectroscopy on 120 water samples. Key finding correctly states polyethylene dominance near storm drain outfalls. Limitations correctly captures the 30-day window and lack of seasonal replication. Output is valid JSON."
+  },
+  {
+    "service": "grit",
+    "model": "gpt-oss:20b",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted all required details for the research question, methods, and conclusion, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled laboratory conditions. The methods correctly identify alkalinity anomaly titration, 48 colonies, and 12 weeks. The conclusion accurately states the 23% reduction in calcification rate, the comparison to 400 ppm controls, statistical significance, and the ocean acidification threat to coral reef ecosystems. No details are missing or inaccurate."
+  },
+  {
+    "service": "grit",
+    "model": "all-the-things",
+    "test_id": "lit_synthesis_1",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted all the required information and formatted it as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The methodology correctly captures 'GPS tracking and direct observation over two years'. The species field correctly identifies both the sea otter (Enhydra lutris) and the purple sea urchin, which are the primary species studied. The conclusion accurately reflects the top-down control mechanism via urchin predation aiding kelp restoration. The output is valid JSON. No details are missing or hallucinated."
+  },
+  {
+    "service": "grit",
+    "model": "all-the-things",
+    "test_id": "lit_synthesis_2",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations from the abstract and formatted them into a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted. Methodology correctly identifies FTIR spectroscopy on 120 water samples. Key finding correctly states polyethylene as dominant polymer near storm drain outfalls. Limitations correctly capture the 30-day window and lack of seasonal replication. Output is valid JSON with no hallucinated or missing fields."
+  },
+  {
+    "service": "grit",
+    "model": "all-the-things",
+    "test_id": "lit_synthesis_3",
+    "service_label": "GRIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts all required details for the research question, methods, and conclusion, and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled laboratory conditions. The methods section correctly identifies alkalinity anomaly titration, 48 coral colonies, 12 weeks, and includes the control comparison at 400 ppm. The conclusion accurately states the 23% reduction in calcification rate, includes the p-value (p < 0.01), and references the threat of ocean acidification to tropical coral reef ecosystems. All key details are present and accurate."
+  },
+  {
+    "service": "CIT",
+    "model": "gemma-4-31b",
+    "test_id": "lit_synthesis_1",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the methodology, species, and conclusion as specified in the rubric, and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies 'sea otter (Enhydra lutris)'. Conclusion accurately captures the top-down control mechanism via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "CIT",
+    "model": "gemma-4-31b",
+    "test_id": "lit_synthesis_2",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the methodology, key finding, and limitations from the abstract and formats them in a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted and present. Methodology correctly identifies FTIR spectroscopy on 120 water samples. Key finding correctly states polyethylene dominance near storm drain outfalls. Limitations correctly identifies the 30-day window and lack of seasonal replication. Output is valid JSON. No hallucinations or missing fields."
+  },
+  {
+    "service": "CIT",
+    "model": "gemma-4-31b",
+    "test_id": "lit_synthesis_3",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts all required details for the research question, methods, and conclusion, and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled laboratory conditions. The methods correctly identify alkalinity anomaly titration, 48 coral colonies, and 12 weeks. The conclusion accurately states the 23% reduction in calcification rate and the implication for ocean acidification threats to coral reef ecosystems. No details are missing or inaccurate."
+  },
+  {
+    "service": "CIT",
+    "model": "mistral-small-4-119b-2603",
+    "test_id": "lit_synthesis_1",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the methodology, species, and conclusion as specified in the rubric, and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies 'sea otter (Enhydra lutris)'. Conclusion accurately captures the top-down control mechanism via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "CIT",
+    "model": "mistral-small-4-119b-2603",
+    "test_id": "lit_synthesis_2",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations as specified in the rubric, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted and present. Methodology correctly identifies FTIR spectroscopy on 120 water samples. Key finding correctly identifies polyethylene as dominant near storm drain outfalls. Limitations correctly captures both the 30-day window and lack of seasonal replication. Output is valid JSON. No hallucinations or missing fields detected."
+  },
+  {
+    "service": "CIT",
+    "model": "mistral-small-4-119b-2603",
+    "test_id": "lit_synthesis_3",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts all required details for the research question, methods, and conclusion in a valid JSON format.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora. The methods section includes all key details: alkalinity anomaly titration, 48 coral colonies, 12 weeks, and controlled laboratory conditions with 400 ppm controls. The conclusion accurately states the 23% reduction in calcification and the implication for ocean acidification threats to coral reef ecosystems. No details are missing or inaccurate."
+  },
+  {
+    "service": "CIT",
+    "model": "granite-4.1-30b",
+    "test_id": "lit_synthesis_1",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the methodology, species, and conclusion as specified in the rubric, and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies 'sea otter (Enhydra lutris)'. Conclusion accurately captures the top-down control via urchin predation aiding kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "CIT",
+    "model": "granite-4.1-30b",
+    "test_id": "lit_synthesis_2",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted without hallucination. Methodology correctly identifies FTIR spectroscopy on 120 water samples. Key finding correctly captures polyethylene as dominant polymer near storm drain outfalls. Limitations correctly notes the 30-day window and lack of seasonal replication. Output is valid JSON."
+  },
+  {
+    "service": "CIT",
+    "model": "granite-4.1-30b",
+    "test_id": "lit_synthesis_3",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts all required details for the research question, methods, and conclusion, and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled laboratory conditions. The methods correctly identify alkalinity anomaly titration, 48 coral colonies, and 12 weeks. The conclusion accurately states the 23% reduction in calcification rate with the p-value, the control comparison at 400 ppm, and the ocean acidification threat to coral reef ecosystems. No details are missing or inaccurate."
+  },
+  {
+    "service": "CIT",
+    "model": "Qwen3-Coder-Next",
+    "test_id": "lit_synthesis_1",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, species, and conclusion as required by the rubric, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology correctly captures GPS tracking and direct observation (including the two-year duration). Species correctly identifies sea otter with scientific name Enhydra lutris. Conclusion accurately captures the top-down control mechanism via urchin predation and its implication for kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "CIT",
+    "model": "Qwen3-Coder-Next",
+    "test_id": "lit_synthesis_2",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations from the abstract and formatted them as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted with no hallucinations. The methodology correctly identifies FTIR spectroscopy on 120 water samples (with additional accurate context about the six sites). The key finding correctly identifies polyethylene as dominant near storm drain outfalls. The limitations correctly capture both the 30-day window and lack of seasonal replication. The output is valid JSON."
+  },
+  {
+    "service": "CIT",
+    "model": "Qwen3-Coder-Next",
+    "test_id": "lit_synthesis_3",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted all required details for the research question, methods, and conclusion, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled conditions. The methods section correctly identifies alkalinity anomaly titration, 48 coral colonies, and 12 weeks, with the added detail of the control group comparison. The conclusion accurately states the 23% reduction in calcification with statistical significance (p < 0.01) and the implication for ocean acidification threats to coral reef ecosystems. No details are missing or inaccurate."
+  },
+  {
+    "service": "CIT",
+    "model": "qwen3.6-35b-a3b",
+    "test_id": "lit_synthesis_1",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts the methodology, species, and conclusion as specified in the rubric, and is formatted as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies 'Sea otter (Enhydra lutris)'. Conclusion accurately captures all key elements: targeted top-down control, disproportionate predation on purple sea urchins, declining kelp density context, and potential aid for kelp restoration. No missing or hallucinated details."
+  },
+  {
+    "service": "CIT",
+    "model": "qwen3.6-35b-a3b",
+    "test_id": "lit_synthesis_2",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations from the abstract and formatted them in a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted without hallucination. Methodology correctly identifies FTIR spectroscopy on 120 water samples from six sites. Key finding correctly states polyethylene dominance near storm drain outfalls. Limitations correctly captures the 30-day window and lack of seasonal replication. Output is valid JSON."
+  },
+  {
+    "service": "CIT",
+    "model": "qwen3.6-35b-a3b",
+    "test_id": "lit_synthesis_3",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted all required details for the research question, methods, and conclusion, and formatted the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled laboratory conditions. The methods section correctly identifies alkalinity anomaly titration, 48 coral colonies, and 12 weeks, plus adds the control comparison detail. The conclusion accurately states the 23% reduction in calcification and the ocean acidification threat to coral reef ecosystems. All key details are present and accurate."
+  },
+  {
+    "service": "CIT",
+    "model": "gpt-oss-120b",
+    "test_id": "lit_synthesis_1",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, species, and conclusion as required by the rubric, formatting the output as a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "The output is valid JSON. Methodology correctly captures 'GPS tracking and direct observation over two years'. Species correctly identifies 'Sea otter (Enhydra lutris)'. Conclusion accurately reflects the top-down control via urchin predation aiding kelp restoration, with no missing or hallucinated details."
+  },
+  {
+    "service": "CIT",
+    "model": "gpt-oss-120b",
+    "test_id": "lit_synthesis_2",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model perfectly extracted the methodology, key finding, and limitations from the abstract and formatted them into a valid JSON object.",
+    "score_claude": 5,
+    "reason_claude": "All three fields are accurately extracted with no hallucinations. Methodology correctly identifies FTIR spectroscopy on 120 water samples from six sites. Key finding correctly states polyethylene as dominant polymer near storm drain outfalls. Limitations correctly capture the 30-day window and lack of seasonal replication. Output is valid JSON."
+  },
+  {
+    "service": "CIT",
+    "model": "gpt-oss-120b",
+    "test_id": "lit_synthesis_3",
+    "service_label": "CIT",
+    "score_gemini": 5,
+    "reason_gemini": "The model output perfectly extracts all required details for the research question, methods, and conclusion in a valid JSON format.",
+    "score_claude": 5,
+    "reason_claude": "The model output is valid JSON. The research question accurately captures the effect of 800 ppm CO2 on calcification of Acropora millepora under controlled conditions. The methods section correctly identifies alkalinity anomaly titration, 48 coral colonies, 12 weeks, and the comparison between 800 ppm and 400 ppm controls. The conclusion accurately states the 23% reduction in calcification rate, the statistical significance (p < 0.01), and the implication for ocean acidification threats to coral reef ecosystems. No details are missing or inaccurate."
+  }
+]
