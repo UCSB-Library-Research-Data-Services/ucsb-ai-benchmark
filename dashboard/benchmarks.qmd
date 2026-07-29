@@ -536,7 +536,9 @@ viewof dist_cat = Inputs.select(
         }).join("")}
       </tbody>
     </table>`;
-  return htl.html([html]);
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div;
 }
 ```
 

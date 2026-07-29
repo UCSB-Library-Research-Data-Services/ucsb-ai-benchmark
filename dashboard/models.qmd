@@ -418,7 +418,9 @@ viewof judge_filter = Inputs.radio(
   }
 
   html += `</div>`;
-  return htl.html([html]);
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div;
 }
 ```
 
