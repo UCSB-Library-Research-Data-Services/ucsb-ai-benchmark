@@ -1,11 +1,11 @@
 service,model,category,judge_model,tests_run,avg_score,avg_latency_sec,avg_tps,service_label,infra,infra_type,category_label
-grit,gemma4:31b,code_generation,programmatic,3,5.0,40.34,7.13,GRIT,On-premise · Ollama,onprem,Code Generation
+grit,gemma4:31b,code_generation,programmatic,6,5.0,51.47,8.01,GRIT,On-premise · Ollama,onprem,Code Generation
 grit,qwen3.5:latest,code_generation,programmatic,3,5.0,33.26,63.38,GRIT,On-premise · Ollama,onprem,Code Generation
-CIT,gemma-4-31b,code_generation,programmatic,3,5.0,1.56,38.05,CIT,On-premise · Ollama,onprem,Code Generation
-CIT,mistral-small-4-119b-2603,code_generation,programmatic,3,5.0,0.48,86.03,CIT,On-premise · Ollama,onprem,Code Generation
-grit,gemma4:31b,metadata_generation,programmatic,3,5.0,55.4,7.86,GRIT,On-premise · Ollama,onprem,Metadata Generation
+CIT,gemma-4-31b,code_generation,programmatic,6,5.0,2.12,39.23,CIT,On-premise · Ollama,onprem,Code Generation
+CIT,mistral-small-4-119b-2603,code_generation,programmatic,6,4.33,0.77,99.27,CIT,On-premise · Ollama,onprem,Code Generation
+grit,gemma4:31b,metadata_generation,programmatic,6,4.83,58.93,8.75,GRIT,On-premise · Ollama,onprem,Metadata Generation
 grit,gemma4:31b,literature_synthesis,gemini-3.5-flash,3,4.67,58.85,8.1,GRIT,On-premise · Ollama,onprem,Literature Synthesis
-grit,gemma4:31b,data_interpretation,programmatic,3,5.0,50.22,7.77,GRIT,On-premise · Ollama,onprem,Data Interpretation
+grit,gemma4:31b,data_interpretation,programmatic,4,5.0,54.84,7.88,GRIT,On-premise · Ollama,onprem,Data Interpretation
 grit,qwen3.5:latest,metadata_generation,programmatic,3,5.0,21.51,89.51,GRIT,On-premise · Ollama,onprem,Metadata Generation
 grit,qwen3.5:latest,literature_synthesis,gemini-3.5-flash,3,4.67,20.1,88.57,GRIT,On-premise · Ollama,onprem,Literature Synthesis
 grit,qwen3.5:latest,data_interpretation,programmatic,3,5.0,8.26,88.49,GRIT,On-premise · Ollama,onprem,Data Interpretation
@@ -57,28 +57,28 @@ grit,all-the-things,code_generation,programmatic,3,5.0,6.79,16.41,GRIT,On-premis
 grit,all-the-things,metadata_generation,programmatic,3,5.0,15.64,45.83,GRIT,On-premise · Ollama,onprem,Metadata Generation
 grit,all-the-things,literature_synthesis,gemini-3.5-flash,3,5.0,11.98,20.46,GRIT,On-premise · Ollama,onprem,Literature Synthesis
 grit,all-the-things,data_interpretation,programmatic,3,5.0,3.74,37.15,GRIT,On-premise · Ollama,onprem,Data Interpretation
-CIT,gemma-4-31b,metadata_generation,programmatic,3,5.0,2.13,37.7,CIT,On-premise · Ollama,onprem,Metadata Generation
+CIT,gemma-4-31b,metadata_generation,programmatic,6,5.0,2.35,39.28,CIT,On-premise · Ollama,onprem,Metadata Generation
 CIT,gemma-4-31b,literature_synthesis,gemini-3.5-flash,3,5.0,2.48,39.3,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,gemma-4-31b,data_interpretation,programmatic,3,5.0,0.18,11.31,CIT,On-premise · Ollama,onprem,Data Interpretation
-CIT,mistral-small-4-119b-2603,metadata_generation,programmatic,3,5.0,0.94,101.36,CIT,On-premise · Ollama,onprem,Metadata Generation
+CIT,gemma-4-31b,data_interpretation,programmatic,6,5.0,0.16,12.6,CIT,On-premise · Ollama,onprem,Data Interpretation
+CIT,mistral-small-4-119b-2603,metadata_generation,programmatic,6,4.67,1.01,103.89,CIT,On-premise · Ollama,onprem,Metadata Generation
 CIT,mistral-small-4-119b-2603,literature_synthesis,gemini-3.5-flash,3,5.0,1.0,108.56,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,mistral-small-4-119b-2603,data_interpretation,programmatic,3,5.0,0.15,13.06,CIT,On-premise · Ollama,onprem,Data Interpretation
-CIT,granite-4.1-30b,code_generation,programmatic,3,5.0,1.71,42.58,CIT,On-premise · Ollama,onprem,Code Generation
-CIT,granite-4.1-30b,metadata_generation,programmatic,3,5.0,1.5,42.8,CIT,On-premise · Ollama,onprem,Metadata Generation
+CIT,mistral-small-4-119b-2603,data_interpretation,programmatic,6,4.33,0.13,14.86,CIT,On-premise · Ollama,onprem,Data Interpretation
+CIT,granite-4.1-30b,code_generation,programmatic,6,5.0,2.24,44.05,CIT,On-premise · Ollama,onprem,Code Generation
+CIT,granite-4.1-30b,metadata_generation,programmatic,6,4.5,1.91,44.05,CIT,On-premise · Ollama,onprem,Metadata Generation
 CIT,granite-4.1-30b,literature_synthesis,gemini-3.5-flash,3,5.0,2.09,43.67,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,granite-4.1-30b,data_interpretation,programmatic,3,5.0,0.19,10.89,CIT,On-premise · Ollama,onprem,Data Interpretation
-CIT,Qwen3-Coder-Next,code_generation,programmatic,3,5.0,0.5,102.72,CIT,On-premise · Ollama,onprem,Code Generation
-CIT,Qwen3-Coder-Next,metadata_generation,programmatic,3,5.0,0.58,127.96,CIT,On-premise · Ollama,onprem,Metadata Generation
+CIT,granite-4.1-30b,data_interpretation,programmatic,6,4.33,0.16,13.01,CIT,On-premise · Ollama,onprem,Data Interpretation
+CIT,Qwen3-Coder-Next,code_generation,programmatic,6,5.0,0.58,119.28,CIT,On-premise · Ollama,onprem,Code Generation
+CIT,Qwen3-Coder-Next,metadata_generation,programmatic,6,4.83,0.83,141.34,CIT,On-premise · Ollama,onprem,Metadata Generation
 CIT,Qwen3-Coder-Next,literature_synthesis,gemini-3.5-flash,3,5.0,0.8,127.53,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,Qwen3-Coder-Next,data_interpretation,programmatic,3,5.0,0.17,12.11,CIT,On-premise · Ollama,onprem,Data Interpretation
-CIT,qwen3.6-35b-a3b,code_generation,programmatic,3,5.0,9.65,64.64,CIT,On-premise · Ollama,onprem,Code Generation
-CIT,qwen3.6-35b-a3b,metadata_generation,programmatic,3,5.0,0.68,111.21,CIT,On-premise · Ollama,onprem,Metadata Generation
+CIT,Qwen3-Coder-Next,data_interpretation,programmatic,6,5.0,0.14,14.36,CIT,On-premise · Ollama,onprem,Data Interpretation
+CIT,qwen3.6-35b-a3b,code_generation,programmatic,6,5.0,5.18,97.25,CIT,On-premise · Ollama,onprem,Code Generation
+CIT,qwen3.6-35b-a3b,metadata_generation,programmatic,6,4.83,0.81,127.19,CIT,On-premise · Ollama,onprem,Metadata Generation
 CIT,qwen3.6-35b-a3b,literature_synthesis,gemini-3.5-flash,3,5.0,0.81,126.51,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,qwen3.6-35b-a3b,data_interpretation,programmatic,3,5.0,0.21,9.74,CIT,On-premise · Ollama,onprem,Data Interpretation
-CIT,gpt-oss-120b,code_generation,programmatic,3,5.0,1.04,163.4,CIT,On-premise · Ollama,onprem,Code Generation
-CIT,gpt-oss-120b,metadata_generation,programmatic,3,5.0,1.35,171.73,CIT,On-premise · Ollama,onprem,Metadata Generation
+CIT,qwen3.6-35b-a3b,data_interpretation,programmatic,6,5.0,0.19,11.27,CIT,On-premise · Ollama,onprem,Data Interpretation
+CIT,gpt-oss-120b,code_generation,programmatic,6,5.0,1.38,170.94,CIT,On-premise · Ollama,onprem,Code Generation
+CIT,gpt-oss-120b,metadata_generation,programmatic,6,4.67,1.59,176.43,CIT,On-premise · Ollama,onprem,Metadata Generation
 CIT,gpt-oss-120b,literature_synthesis,gemini-3.5-flash,3,5.0,1.35,170.46,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,gpt-oss-120b,data_interpretation,programmatic,3,5.0,0.65,148.26,CIT,On-premise · Ollama,onprem,Data Interpretation
+CIT,gpt-oss-120b,data_interpretation,programmatic,6,5.0,0.66,147.14,CIT,On-premise · Ollama,onprem,Data Interpretation
 grit,llava:7b,ocr,gemini-3.5-flash,2,3.0,7.7,42.59,GRIT,On-premise · Ollama,onprem,OCR
 grit,llava:7b,vision_qa,programmatic,2,1.0,0.8,50.85,GRIT,On-premise · Ollama,onprem,Vision QA
 grit,phi4:latest,ocr,programmatic,1,1.0,7.33,40.64,GRIT,On-premise · Ollama,onprem,OCR
@@ -95,7 +95,7 @@ grit,all-the-things,vision_qa,programmatic,2,1.0,8.46,47.79,GRIT,On-premise · O
 grit,all-the-things,vision_qa,gemini-3.5-flash,1,1.0,3.12,27.27,GRIT,On-premise · Ollama,onprem,Vision QA
 aicommons,gpt-4o,ocr,programmatic,1,1.0,5.25,74.82,AICommons,Cloud · Amazon Bedrock,cloud,OCR
 aicommons,gpt-4o,vision_qa,programmatic,2,1.0,2.35,22.91,AICommons,Cloud · Amazon Bedrock,cloud,Vision QA
-grit,gemma4:31b,literature_synthesis,claude-v4.6-sonnet,3,4.67,58.85,8.1,GRIT,On-premise · Ollama,onprem,Literature Synthesis
+grit,gemma4:31b,literature_synthesis,claude-v4.6-sonnet,6,4.83,63.21,7.29,GRIT,On-premise · Ollama,onprem,Literature Synthesis
 grit,qwen3.5:latest,literature_synthesis,claude-v4.6-sonnet,3,4.67,20.1,88.57,GRIT,On-premise · Ollama,onprem,Literature Synthesis
 grit,qwen3-coder-next:latest,literature_synthesis,claude-v4.6-sonnet,3,5.0,1.43,71.6,GRIT,On-premise · Ollama,onprem,Literature Synthesis
 grit,mistral:latest,literature_synthesis,claude-v4.6-sonnet,3,4.33,1.18,116.02,GRIT,On-premise · Ollama,onprem,Literature Synthesis
@@ -109,12 +109,12 @@ grit,gemma3:latest,literature_synthesis,claude-v4.6-sonnet,3,5.0,0.96,121.12,GRI
 grit,deepseek-r1:latest,literature_synthesis,claude-v4.6-sonnet,3,5.0,4.01,109.82,GRIT,On-premise · Ollama,onprem,Literature Synthesis
 grit,gpt-oss:20b,literature_synthesis,claude-v4.6-sonnet,3,5.0,2.22,120.87,GRIT,On-premise · Ollama,onprem,Literature Synthesis
 grit,all-the-things,literature_synthesis,claude-v4.6-sonnet,3,5.0,11.98,20.46,GRIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,gemma-4-31b,literature_synthesis,claude-v4.6-sonnet,3,5.0,2.48,39.3,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,mistral-small-4-119b-2603,literature_synthesis,claude-v4.6-sonnet,3,5.0,1.0,108.56,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,granite-4.1-30b,literature_synthesis,claude-v4.6-sonnet,3,5.0,2.09,43.67,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,Qwen3-Coder-Next,literature_synthesis,claude-v4.6-sonnet,3,5.0,0.8,127.53,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,qwen3.6-35b-a3b,literature_synthesis,claude-v4.6-sonnet,3,5.0,0.81,126.51,CIT,On-premise · Ollama,onprem,Literature Synthesis
-CIT,gpt-oss-120b,literature_synthesis,claude-v4.6-sonnet,3,5.0,1.35,170.46,CIT,On-premise · Ollama,onprem,Literature Synthesis
+CIT,gemma-4-31b,literature_synthesis,claude-v4.6-sonnet,6,5.0,2.43,39.52,CIT,On-premise · Ollama,onprem,Literature Synthesis
+CIT,mistral-small-4-119b-2603,literature_synthesis,claude-v4.6-sonnet,6,5.0,1.01,110.22,CIT,On-premise · Ollama,onprem,Literature Synthesis
+CIT,granite-4.1-30b,literature_synthesis,claude-v4.6-sonnet,6,5.0,2.5,44.32,CIT,On-premise · Ollama,onprem,Literature Synthesis
+CIT,Qwen3-Coder-Next,literature_synthesis,claude-v4.6-sonnet,6,5.0,0.9,139.65,CIT,On-premise · Ollama,onprem,Literature Synthesis
+CIT,qwen3.6-35b-a3b,literature_synthesis,claude-v4.6-sonnet,6,5.0,0.82,132.05,CIT,On-premise · Ollama,onprem,Literature Synthesis
+CIT,gpt-oss-120b,literature_synthesis,claude-v4.6-sonnet,6,5.0,1.62,173.81,CIT,On-premise · Ollama,onprem,Literature Synthesis
 grit,llava:7b,ocr,claude-v4.6-sonnet,2,1.0,7.7,42.59,GRIT,On-premise · Ollama,onprem,OCR
 grit,phi4:latest,ocr,claude-v4.6-sonnet,1,1.0,1.46,45.79,GRIT,On-premise · Ollama,onprem,OCR
 grit,phi4:latest,document_extraction,claude-v4.6-sonnet,1,2.0,2.08,57.23,GRIT,On-premise · Ollama,onprem,Document Extraction
@@ -128,3 +128,96 @@ grit,llava:7b,ocr,programmatic,1,1.0,3.08,27.96,GRIT,On-premise · Ollama,onprem
 aicommons,gpt-4o,ocr,claude-v4.6-sonnet,1,3.0,2.02,16.3,AICommons,Cloud · Amazon Bedrock,cloud,OCR
 aicommons,gpt-4o,document_extraction,claude-v4.6-sonnet,1,2.0,2.9,42.09,AICommons,Cloud · Amazon Bedrock,cloud,Document Extraction
 aicommons,gpt-4o,vision_qa,claude-v4.6-sonnet,1,1.0,2.2,23.23,AICommons,Cloud · Amazon Bedrock,cloud,Vision QA
+aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,code_generation,programmatic,6,5.0,1.68,67.42,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,metadata_generation,programmatic,6,4.67,1.87,66.23,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,literature_synthesis,claude-v4.6-sonnet,3,4.33,4.76,75.45,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,data_interpretation,programmatic,6,5.0,1.28,0.79,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,01KSNH04J1E35CH4KJDD8GPQFM,code_generation,programmatic,6,5.0,2.27,43.5,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,01KSNH04J1E35CH4KJDD8GPQFM,metadata_generation,programmatic,6,4.5,2.9,52.45,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,01KSNH04J1E35CH4KJDD8GPQFM,literature_synthesis,claude-v4.6-sonnet,3,5.0,6.29,43.97,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,01KSNH04J1E35CH4KJDD8GPQFM,data_interpretation,programmatic,6,5.0,1.36,2.96,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,01KWZDN042XGHVSXPZKNWW0KY5,code_generation,programmatic,6,5.0,2.72,39.53,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,01KWZDN042XGHVSXPZKNWW0KY5,metadata_generation,programmatic,6,4.67,3.34,53.37,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,01KWZDN042XGHVSXPZKNWW0KY5,literature_synthesis,claude-v4.6-sonnet,3,5.0,11.31,41.28,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,01KWZDN042XGHVSXPZKNWW0KY5,data_interpretation,programmatic,6,5.0,1.33,3.03,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,amazon-nova-lite,code_generation,programmatic,6,5.0,1.07,101.65,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,amazon-nova-lite,metadata_generation,programmatic,6,4.67,1.01,91.63,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,amazon-nova-lite,literature_synthesis,claude-v4.6-sonnet,3,5.0,1.27,98.11,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,amazon-nova-lite,data_interpretation,programmatic,6,4.33,0.57,9.13,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,amazon-nova-micro,code_generation,programmatic,6,4.0,0.94,131.86,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,amazon-nova-micro,metadata_generation,programmatic,6,4.5,0.74,116.62,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,amazon-nova-micro,literature_synthesis,claude-v4.6-sonnet,3,5.0,0.92,138.82,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,amazon-nova-micro,data_interpretation,programmatic,6,4.33,0.55,3.62,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,amazon-nova-pro,code_generation,programmatic,6,5.0,1.11,75.54,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,amazon-nova-pro,metadata_generation,programmatic,6,4.83,1.02,81.85,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,amazon-nova-pro,literature_synthesis,claude-v4.6-sonnet,3,5.0,1.6,89.48,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,amazon-nova-pro,data_interpretation,programmatic,6,5.0,0.65,3.18,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,claude-v4.5-haiku,code_generation,programmatic,6,5.0,2.06,59.43,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,claude-v4.5-haiku,metadata_generation,programmatic,6,4.67,1.91,66.53,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,claude-v4.5-haiku,literature_synthesis,claude-v4.6-sonnet,3,5.0,2.75,71.05,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,claude-v4.5-haiku,data_interpretation,programmatic,6,5.0,1.17,0.86,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,claude-v4.6-opus,code_generation,programmatic,6,5.0,2.75,30.65,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,claude-v4.6-opus,metadata_generation,programmatic,6,4.67,3.3,41.01,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,claude-v4.6-opus,literature_synthesis,claude-v4.6-sonnet,3,5.0,5.42,36.91,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,claude-v4.6-opus,data_interpretation,programmatic,6,4.33,1.94,2.08,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,claude-v4.6-sonnet,code_generation,programmatic,6,5.0,2.17,46.53,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,claude-v4.6-sonnet,metadata_generation,programmatic,6,4.67,2.82,54.41,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,claude-v4.6-sonnet,data_interpretation,programmatic,6,5.0,1.22,3.3,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,llama-4-maverick-17b-instruct,code_generation,programmatic,6,5.0,1.16,154.78,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,llama-4-maverick-17b-instruct,metadata_generation,programmatic,6,4.5,0.87,102.26,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,llama-4-maverick-17b-instruct,literature_synthesis,claude-v4.6-sonnet,3,4.67,1.32,143.75,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,llama-4-maverick-17b-instruct,data_interpretation,programmatic,6,4.33,2.85,181.32,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,llama-4-scout-17b-instruct,code_generation,programmatic,6,5.0,1.2,150.43,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,llama-4-scout-17b-instruct,metadata_generation,programmatic,6,4.67,0.97,99.92,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,llama-4-scout-17b-instruct,literature_synthesis,claude-v4.6-sonnet,3,5.0,1.08,87.92,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,llama-4-scout-17b-instruct,data_interpretation,programmatic,6,4.33,3.09,167.5,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,openai-gpt-oss-120b,code_generation,programmatic,6,5.0,2.14,136.85,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,openai-gpt-oss-120b,metadata_generation,programmatic,6,4.83,3.18,129.18,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,openai-gpt-oss-120b,literature_synthesis,claude-v4.6-sonnet,3,5.0,2.85,147.86,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,openai-gpt-oss-120b,data_interpretation,programmatic,6,5.0,1.5,82.76,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,openai-gpt-oss-20b,code_generation,programmatic,6,5.0,1.58,162.79,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,openai-gpt-oss-20b,metadata_generation,programmatic,6,5.0,2.53,168.16,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,openai-gpt-oss-20b,literature_synthesis,claude-v4.6-sonnet,3,5.0,2.22,174.46,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,openai-gpt-oss-20b,data_interpretation,programmatic,6,5.0,1.86,116.81,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,qwen3-32b,code_generation,programmatic,6,5.0,1.2,71.9,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,qwen3-32b,metadata_generation,programmatic,6,4.83,1.14,83.25,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,qwen3-32b,literature_synthesis,claude-v4.6-sonnet,3,5.0,1.65,64.28,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,qwen3-32b,data_interpretation,programmatic,6,4.33,0.6,3.76,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,gpt-3.5-turbo,code_generation,programmatic,6,5.0,1.77,75.58,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,gpt-3.5-turbo,metadata_generation,programmatic,6,4.67,1.7,71.51,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,gpt-3.5-turbo,literature_synthesis,claude-v4.6-sonnet,3,5.0,2.82,68.24,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-3.5-turbo,data_interpretation,programmatic,6,5.0,1.3,0.79,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,gpt-3.5-turbo-16k,code_generation,programmatic,6,5.0,1.67,75.51,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,gpt-3.5-turbo-16k,metadata_generation,programmatic,6,4.67,1.62,80.01,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,gpt-3.5-turbo-16k,literature_synthesis,claude-v4.6-sonnet,3,5.0,2.39,72.45,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-3.5-turbo-16k,data_interpretation,programmatic,6,5.0,1.28,0.79,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,gpt-4,code_generation,programmatic,6,5.0,2.19,46.13,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,gpt-4,metadata_generation,programmatic,6,4.67,2.81,53.44,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,gpt-4,literature_synthesis,claude-v4.6-sonnet,3,5.0,5.8,44.26,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-4,data_interpretation,programmatic,6,5.0,1.75,2.5,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,gpt-4-turbo,code_generation,programmatic,6,5.0,2.29,44.65,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,gpt-4-turbo,metadata_generation,programmatic,6,4.67,2.56,56.87,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,gpt-4-turbo,literature_synthesis,claude-v4.6-sonnet,3,5.0,6.1,42.87,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-4-turbo,data_interpretation,programmatic,6,5.0,1.53,2.71,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,gpt-4o,code_generation,programmatic,6,5.0,2.23,45.64,AICommons,Cloud · Amazon Bedrock,cloud,Code Generation
+aicommons,gpt-4o,metadata_generation,programmatic,6,4.67,2.67,56.27,AICommons,Cloud · Amazon Bedrock,cloud,Metadata Generation
+aicommons,gpt-4o,literature_synthesis,claude-v4.6-sonnet,3,5.0,5.81,43.51,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-4o,data_interpretation,programmatic,6,5.0,1.33,3.01,AICommons,Cloud · Amazon Bedrock,cloud,Data Interpretation
+aicommons,01KWZDN042XGHVSXPZKNWW0KY5,literature_synthesis,claude-v4.6-opus,3,4.67,12.5,46.35,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,01KXPE96MJ1B5MYM9RAXVTFY9S,literature_synthesis,claude-v4.6-opus,3,5.0,2.4,74.9,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,01KSNH04J1E35CH4KJDD8GPQFM,literature_synthesis,claude-v4.6-opus,3,5.0,2.29,51.97,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,amazon-nova-lite,literature_synthesis,claude-v4.6-opus,3,5.0,1.03,96.94,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,amazon-nova-micro,literature_synthesis,claude-v4.6-opus,3,4.67,0.78,123.26,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,amazon-nova-pro,literature_synthesis,claude-v4.6-opus,3,5.0,1.0,97.09,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,claude-v4.5-haiku,literature_synthesis,claude-v4.6-opus,3,5.0,1.83,62.67,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,claude-v4.6-sonnet,literature_synthesis,claude-v4.6-opus,3,5.0,3.35,54.14,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,llama-4-maverick-17b-instruct,literature_synthesis,claude-v4.6-opus,3,5.0,0.77,109.27,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,llama-4-scout-17b-instruct,literature_synthesis,claude-v4.6-opus,3,5.0,0.9,109.36,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,openai-gpt-oss-120b,literature_synthesis,claude-v4.6-opus,3,5.0,2.22,165.53,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,openai-gpt-oss-20b,literature_synthesis,claude-v4.6-opus,3,5.0,1.53,210.01,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,qwen3-32b,literature_synthesis,claude-v4.6-opus,3,4.67,0.99,100.88,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-3.5-turbo,literature_synthesis,claude-v4.6-opus,3,5.0,1.73,66.07,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-3.5-turbo-16k,literature_synthesis,claude-v4.6-opus,3,5.0,1.84,60.56,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-4,literature_synthesis,claude-v4.6-opus,3,5.0,3.76,52.99,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-4-turbo,literature_synthesis,claude-v4.6-opus,3,5.0,3.75,50.87,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
+aicommons,gpt-4o,literature_synthesis,claude-v4.6-opus,3,5.0,3.42,52.67,AICommons,Cloud · Amazon Bedrock,cloud,Literature Synthesis
