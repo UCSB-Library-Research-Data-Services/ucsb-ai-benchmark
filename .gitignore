@@ -14,3 +14,5 @@ wheels/
 
 # Local running files
 .token_usage.json
+_results_log.json
+_results_summary.csv
