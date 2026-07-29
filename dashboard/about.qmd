@@ -38,7 +38,6 @@ The benchmark covers six task categories drawn from real research computing work
       <th>Service</th>
       <th>Infrastructure</th>
       <th>Endpoint</th>
-      <th>Token Budget</th>
       <th>Notes</th>
     </tr>
   </thead>
@@ -47,21 +46,18 @@ The benchmark covers six task categories drawn from real research computing work
       <td><span class="service-badge badge-grit">GRIT</span></td>
       <td><span style="color:#58a6ff">🖥️ On-premise · Ollama</span></td>
       <td style="font-family:monospace;font-size:0.78rem;color:#6e7681">llm.grit.ucsb.edu</td>
-      <td style="color:#8b949e">10M tokens / month</td>
       <td style="color:#8b949e;font-size:0.85rem">UCSB General Research IT HPC cluster. Largest model catalog.</td>
     </tr>
     <tr>
       <td><span class="service-badge badge-cit">CIT</span></td>
       <td><span style="color:#3fb950">🖥️ On-premise · Ollama</span></td>
       <td style="font-family:monospace;font-size:0.78rem;color:#6e7681">api.ai.college.ucsb.edu</td>
-      <td style="color:#8b949e">10M tokens / month</td>
       <td style="color:#8b949e;font-size:0.85rem">College of IT servers. Higher throughput than GRIT for same models.</td>
     </tr>
     <tr>
       <td><span class="service-badge badge-aicommons">AICommons</span></td>
       <td><span style="color:#bc8cff">☁️ Cloud · Amazon Bedrock</span></td>
       <td style="font-family:monospace;font-size:0.78rem;color:#6e7681">zkh52rh785.execute-api.us-east-1.amazonaws.com</td>
-      <td style="color:#8b949e">900K tokens / month</td>
       <td style="color:#8b949e;font-size:0.85rem">AWS-hosted. Diverse catalog: Claude, GPT-4o, Amazon Nova, Llama 4.</td>
     </tr>
   </tbody>
