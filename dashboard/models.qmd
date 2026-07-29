@@ -1,0 +1,545 @@
+---
+title: "Model Explorer"
+format:
+  html:
+    page-layout: full
+---
+
+```{=html}
+<div class="hero-section" style="padding:2.5rem 0 1.5rem">
+  <h1 style="font-size:1.9rem">Model Explorer</h1>
+  <p class="lead">
+    Select any service and model to explore its full evaluation profile:
+    radar chart, per-category scores, individual task results, and — for
+    literature synthesis tasks — a side-by-side judge comparison.
+  </p>
+</div>
+```
+
+```{ojs}
+//| output: false
+lb        = FileAttachment("data/leaderboard.json").json()
+per_test  = FileAttachment("data/per_test_scores.json").json()
+judge_cmp = FileAttachment("data/judge_comparison.json").json()
+
+service_colors = ({
+  "grit":      "#58a6ff",
+  "CIT":       "#3fb950",
+  "aicommons": "#bc8cff"
+})
+service_labels = ({ "grit": "GRIT", "CIT": "CIT", "aicommons": "AICommons" })
+
+cat_order = ["code_generation","metadata_generation","literature_synthesis",
+             "data_interpretation","ocr","document_extraction","vision_qa"]
+cat_labels_map = ({
+  "code_generation":     "Code Generation",
+  "metadata_generation": "Metadata Generation",
+  "literature_synthesis":"Literature Synthesis",
+  "data_interpretation": "Data Interpretation",
+  "ocr":                 "OCR",
+  "document_extraction": "Document Extraction",
+  "vision_qa":           "Vision QA"
+})
+
+// Unique services present in leaderboard
+services_available = [...new Set(lb.map(d => d.service))].sort()
+```
+
+---
+
+## Select a Model
+
+```{ojs}
+viewof selected_service = Inputs.select(
+  services_available,
+  {
+    label: "Service",
+    format: v => service_labels[v] || v
+  }
+)
+```
+
+```{ojs}
+//| output: false
+models_for_service = lb
+  .filter(d => d.service === selected_service)
+  .map(d => d.model)
+  .sort()
+```
+
+```{ojs}
+viewof selected_model = Inputs.select(
+  models_for_service,
+  { label: "Model" }
+)
+```
+
+```{ojs}
+//| output: false
+// Current leaderboard entry
+current_lb = lb.find(d => d.service === selected_service && d.model === selected_model)
+
+// Per-test rows for this model (canonical judge: claude preferred)
+model_tests_raw = per_test.filter(d => d.service === selected_service && d.model === selected_model)
+
+// Deduplicate: for same test_id prefer claude judge
+model_tests = {
+  const map = new Map();
+  for (const r of model_tests_raw) {
+    const k = r.test_id;
+    const existing = map.get(k);
+    if (!existing) { map.set(k, r); }
+    else if (r.judge_model === "claude-v4.6-sonnet") { map.set(k, r); }
+  }
+  return [...map.values()].sort((a,b) => {
+    const ci = cat_order.indexOf(a.category) - cat_order.indexOf(b.category);
+    if (ci !== 0) return ci;
+    return a.test_id.localeCompare(b.test_id);
+  });
+}
+
+// Categories actually tested for this model
+cats_tested = [...new Set(model_tests.map(d => d.category))]
+```
+
+---
+
+## Model Profile
+
+```{ojs}
+// Info header card
+{
+  if (!current_lb)
+    return htl.html`<p style="color:#8b949e">No data found for this selection.</p>`;
+
+  const infraIcon = current_lb.infra_type === "onprem" ? "🖥️" : "☁️";
+  const scoreColor = current_lb.overall_score >= 4.5 ? "#3fb950"
+                   : current_lb.overall_score >= 3.5 ? "#79c0ff" : "#d29922";
+
+  return htl.html`
+  <div class="chart-card" style="display:flex;flex-wrap:wrap;gap:2rem;align-items:center;padding:1.25rem 1.75rem">
+    <div>
+      <div style="font-size:0.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Model</div>
+      <div style="font-size:1.25rem;font-weight:700;color:#e6edf3">${current_lb.model}</div>
+    </div>
+    <div>
+      <div style="font-size:0.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Service</div>
+      <span class="service-badge badge-${current_lb.service}" style="font-size:0.88rem">${service_labels[current_lb.service]}</span>
+    </div>
+    <div>
+      <div style="font-size:0.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Infrastructure</div>
+      <div style="font-size:0.9rem;color:#8b949e">${infraIcon} ${current_lb.infra}</div>
+    </div>
+    <div>
+      <div style="font-size:0.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Overall Score</div>
+      <div style="font-size:1.7rem;font-weight:700;color:${scoreColor}">${current_lb.overall_score.toFixed(2)}<span style="font-size:0.85rem;color:#6e7681"> / 5</span></div>
+    </div>
+    <div>
+      <div style="font-size:0.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Avg Throughput</div>
+      <div style="font-size:1.3rem;font-weight:600;color:#e6edf3">${current_lb.avg_tps.toFixed(0)}<span style="font-size:0.8rem;color:#6e7681"> t/s</span></div>
+    </div>
+    <div>
+      <div style="font-size:0.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Avg Latency</div>
+      <div style="font-size:1.3rem;font-weight:600;color:#e6edf3">${current_lb.avg_latency_sec.toFixed(2)}<span style="font-size:0.8rem;color:#6e7681"> s</span></div>
+    </div>
+    <div>
+      <div style="font-size:0.75rem;color:#8b949e;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Categories Tested</div>
+      <div style="font-size:1.3rem;font-weight:600;color:#e6edf3">${current_lb.categories_tested}</div>
+    </div>
+  </div>`;
+}
+```
+
+```{ojs}
+//| output: false
+// Radar chart data — scores per category
+radar_data = cat_order.map(cat => {
+  const key = "score_" + cat;
+  return {
+    category: cat,
+    label: cat_labels_map[cat],
+    score: current_lb ? (current_lb[key] ?? null) : null
+  };
+})
+```
+
+```{ojs}
+{
+  if (!current_lb)
+    return htl.html``;
+
+  // Two-column layout: radar left, bar chart right
+  const svc = selected_service;
+  const col = service_colors[svc];
+
+  // ─── Radar chart ────────────────────────────────────────────────────────
+  const size   = 280;
+  const cx     = size / 2;
+  const cy     = size / 2;
+  const r_max  = 100;
+  const cats   = radar_data.filter(d => d.score !== null);
+  const n      = cats.length;
+
+  function angle(i) { return (i / n) * 2 * Math.PI - Math.PI / 2; }
+  function pt(score, i, scale=1) {
+    const a = angle(i);
+    const r = r_max * (score / 5) * scale;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  }
+
+  const svgR = d3.create("svg")
+    .attr("width", size).attr("height", size)
+    .style("font-family","-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif");
+
+  // Background rings
+  [1,2,3,4,5].forEach(v => {
+    const pts = cats.map((_,i) => pt(v,i)).map(p=>p.join(",")).join(" ");
+    svgR.append("polygon").attr("points",pts)
+      .attr("fill","none").attr("stroke","#30363d").attr("stroke-width",v===5?1.5:0.8);
+    if (v % 2 === 0) {
+      const [lx,ly] = pt(v, 0);
+      svgR.append("text").attr("x",lx+3).attr("y",ly-2)
+        .attr("font-size",8).attr("fill","#6e7681").text(v);
+    }
+  });
+
+  // Spokes
+  cats.forEach((_,i) => {
+    const [x2,y2] = pt(5,i);
+    svgR.append("line").attr("x1",cx).attr("y1",cy).attr("x2",x2).attr("y2",y2)
+      .attr("stroke","#30363d").attr("stroke-width",0.8);
+  });
+
+  // Data polygon
+  const polyPts = cats.map((d,i) => pt(d.score,i)).map(p=>p.join(",")).join(" ");
+  svgR.append("polygon").attr("points",polyPts)
+    .attr("fill",col).attr("fill-opacity",0.15)
+    .attr("stroke",col).attr("stroke-width",2);
+
+  // Data points
+  cats.forEach((d,i) => {
+    const [px,py] = pt(d.score,i);
+    svgR.append("circle").attr("cx",px).attr("cy",py).attr("r",4)
+      .attr("fill",col).attr("stroke","#0d1117").attr("stroke-width",1.5);
+  });
+
+  // Category labels
+  cats.forEach((d,i) => {
+    const [lx,ly] = pt(5.6, i);
+    const lines = d.label.split(" ");
+    lines.forEach((line, li) => {
+      svgR.append("text")
+        .attr("x",lx).attr("y",ly + li*12)
+        .attr("text-anchor","middle").attr("dominant-baseline","middle")
+        .attr("font-size",9).attr("fill","#8b949e")
+        .text(line);
+    });
+  });
+
+  // ─── Bar chart (right panel) ─────────────────────────────────────────────
+  const bW   = 340;
+  const bH   = size;
+  const bPadL = 120, bPadR = 60, bPadT = 10, bPadB = 10;
+  const barMaxW = bW - bPadL - bPadR;
+  const rowH  = (bH - bPadT - bPadB) / cats.length;
+
+  const svgB = d3.create("svg")
+    .attr("width", bW).attr("height", bH)
+    .style("font-family","-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif");
+
+  const xS = d3.scaleLinear().domain([0,5]).range([0, barMaxW]);
+
+  cats.forEach((d,i) => {
+    const by = bPadT + i * rowH + rowH * 0.15;
+    const bh = rowH * 0.7;
+    const bx = bPadL;
+    const scoreW = xS(d.score);
+
+    // Background track
+    svgB.append("rect").attr("x",bx).attr("y",by)
+      .attr("width",barMaxW).attr("height",bh)
+      .attr("rx",3).attr("fill","#1c2128");
+
+    // Score fill
+    const fillCol = d.score >= 4.5 ? "#3fb950"
+                  : d.score >= 3.5 ? col
+                  : d.score >= 2.5 ? "#d29922" : "#f85149";
+    svgB.append("rect").attr("x",bx).attr("y",by)
+      .attr("width",scoreW).attr("height",bh)
+      .attr("rx",3).attr("fill",fillCol).attr("opacity",0.8);
+
+    // Label
+    svgB.append("text")
+      .attr("x", bx-6).attr("y", by + bh/2 + 4)
+      .attr("text-anchor","end").attr("font-size",10.5).attr("fill","#8b949e")
+      .text(d.label);
+
+    // Score text
+    svgB.append("text")
+      .attr("x", bx + scoreW + 5).attr("y", by + bh/2 + 4)
+      .attr("font-size",10.5).attr("font-weight",700)
+      .attr("fill", d.score !== null ? "#e6edf3" : "#6e7681")
+      .text(d.score !== null ? d.score.toFixed(2) : "—");
+  });
+
+  // Combine into side-by-side layout
+  const container = d3.create("div")
+    .style("display","flex").style("align-items","center")
+    .style("gap","2rem").style("flex-wrap","wrap");
+
+  // Radar wrapper
+  const radarWrap = container.append("div")
+    .style("flex","0 0 auto");
+  const radarTitle = radarWrap.append("div")
+    .style("font-size","0.82rem").style("color","#8b949e")
+    .style("margin-bottom","0.5rem").style("text-align","center")
+    .text("Capability Radar");
+  radarWrap.append(() => svgR.node());
+
+  // Bar wrapper
+  const barWrap = container.append("div").style("flex","1 1 300px");
+  const barTitle = barWrap.append("div")
+    .style("font-size","0.82rem").style("color","#8b949e")
+    .style("margin-bottom","0.5rem").text("Score by Category");
+  barWrap.append(() => svgB.node());
+
+  return htl.html`
+    <div class="chart-card">
+      <h4>Performance Profile — ${selected_model}</h4>
+      <div class="chart-subtitle">${service_labels[selected_service]} &nbsp;·&nbsp; ${current_lb?.infra}</div>
+      ${container.node()}
+    </div>`;
+}
+```
+
+---
+
+## Task-by-Task Results
+
+```{=html}
+<p class="section-subheading">
+  Every individual evaluation run for this model. Scores are on a 1–5 scale.
+  For literature synthesis, use the judge toggle to compare Gemini vs Claude evaluations.
+</p>
+```
+
+```{ojs}
+viewof judge_filter = Inputs.radio(
+  ["claude-v4.6-sonnet", "gemini-3.5-flash", "all"],
+  {
+    label: "Judge (Lit. Synthesis)",
+    value: "claude-v4.6-sonnet",
+    format: v => v === "all" ? "Show both" : v
+  }
+)
+```
+
+```{ojs}
+{
+  // Filter per-test rows with judge selection
+  const rows = per_test.filter(d =>
+    d.service === selected_service &&
+    d.model   === selected_model
+  ).filter(d => {
+    if (d.category !== "literature_synthesis") return true;
+    if (judge_filter === "all") return true;
+    return (d.judge_model || "programmatic") === judge_filter ||
+           (d.judge_model || "programmatic") === "programmatic";
+  }).sort((a,b) => {
+    const ci = cat_order.indexOf(a.category) - cat_order.indexOf(b.category);
+    if (ci !== 0) return ci;
+    return a.test_id.localeCompare(b.test_id);
+  });
+
+  if (rows.length === 0)
+    return htl.html`<p style="color:#8b949e;padding:1rem">No tasks found for this selection.</p>`;
+
+  function scoreHtml(s) {
+    const cls = s >= 5 ? "score-5" : s >= 4 ? "score-4" : s >= 3 ? "score-3" : s >= 2 ? "score-2" : "score-1";
+    return `<span class="${cls}" style="font-size:1.05rem;font-weight:700">${s}</span>`;
+  }
+
+  function judgeTag(j) {
+    if (!j || j === "programmatic")
+      return `<span style="font-size:0.72rem;color:#6e7681;background:rgba(255,255,255,0.05);padding:.1rem .4rem;border-radius:4px">programmatic</span>`;
+    if (j.includes("claude"))
+      return `<span style="font-size:0.72rem;color:#bc8cff;background:rgba(188,140,255,0.1);padding:.1rem .4rem;border-radius:4px">Claude</span>`;
+    return `<span style="font-size:0.72rem;color:#58a6ff;background:rgba(88,166,255,0.1);padding:.1rem .4rem;border-radius:4px">Gemini</span>`;
+  }
+
+  function latencyFmt(l) {
+    return l < 1 ? `${(l*1000).toFixed(0)}ms` : `${l.toFixed(1)}s`;
+  }
+
+  // Group by category
+  const byCat = new Map();
+  for (const r of rows) {
+    if (!byCat.has(r.category)) byCat.set(r.category, []);
+    byCat.get(r.category).push(r);
+  }
+
+  let html = `<div style="margin-top:0.5rem">`;
+
+  for (const [cat, catRows] of byCat) {
+    const svcCol = service_colors[selected_service];
+    html += `
+      <div style="margin-bottom:1.5rem">
+        <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;
+                    letter-spacing:.08em;color:${svcCol};
+                    border-bottom:1px solid #30363d;padding-bottom:.4rem;
+                    margin-bottom:.5rem">
+          ${cat_labels_map[cat] || cat}
+        </div>`;
+
+    catRows.forEach(r => {
+      // Truncate reason to ~180 chars
+      const reason = r.reason ? r.reason.substring(0,200) + (r.reason.length > 200 ? "…" : "") : "";
+
+      html += `
+        <div style="display:grid;grid-template-columns:160px 48px 120px 90px 1fr;
+                    gap:.5rem;align-items:start;
+                    padding:.55rem .75rem;
+                    border-radius:6px;
+                    margin-bottom:3px;
+                    background:rgba(255,255,255,0.02);
+                    border:1px solid #30363d;
+                    font-size:0.85rem">
+          <div style="color:#e6edf3;font-weight:500">${r.test_id}</div>
+          <div style="text-align:center">${scoreHtml(r.score)}</div>
+          <div>${judgeTag(r.judge_model)}</div>
+          <div style="color:#6e7681;font-size:0.8rem">
+            ${latencyFmt(r.latency_sec)} &nbsp; ${r.tps.toFixed(0)} t/s
+          </div>
+          <div style="color:#8b949e;font-size:0.8rem;line-height:1.4">${reason}</div>
+        </div>`;
+    });
+
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return htl.html([html]);
+}
+```
+
+---
+
+## Judge Comparison — Literature Synthesis
+
+```{=html}
+<p class="section-subheading">
+  For literature synthesis tasks, two LLM judges evaluated the same model outputs independently:
+  <strong style="color:#58a6ff">Gemini 3.5-flash</strong> (development judge) and
+  <strong style="color:#bc8cff">Claude v4.6-sonnet</strong> (production judge).
+  Dots above the diagonal mean Gemini scored higher; below means Claude scored higher.
+</p>
+<div class="chart-card">
+  <h4>Judge Agreement — Gemini vs Claude Scores</h4>
+  <div class="chart-subtitle">Each dot = one literature synthesis task for the selected model. Diagonal = perfect agreement.</div>
+  <div id="judge-scatter"></div>
+</div>
+```
+
+```{ojs}
+{
+  const jRows = judge_cmp.filter(d =>
+    d.service === selected_service && d.model === selected_model
+  );
+
+  if (jRows.length === 0)
+    return htl.html`<p style="color:#8b949e;padding:.5rem 0">No judge comparison data for this model (may not have literature synthesis tasks or judge data).</p>`;
+
+  const size = 280;
+  const pad  = 45;
+  const pW   = size - pad * 2;
+
+  const scale = d3.scaleLinear().domain([0.5,5.5]).range([0,pW]);
+
+  const svg = d3.create("svg")
+    .attr("width", size + 80).attr("height", size)
+    .style("font-family","-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif")
+    .style("overflow","visible");
+  const g = svg.append("g").attr("transform",`translate(${pad},${pad-10})`);
+
+  // Diagonal
+  g.append("line").attr("x1",0).attr("y1",pW).attr("x2",pW).attr("y2",0)
+   .attr("stroke","#30363d").attr("stroke-dasharray","4,3").attr("stroke-width",1.5);
+
+  // Grid
+  [1,2,3,4,5].forEach(v => {
+    g.append("line").attr("x1",scale(v)).attr("x2",scale(v)).attr("y1",0).attr("y2",pW)
+     .attr("stroke","#30363d").attr("stroke-dasharray","2,4");
+    g.append("line").attr("x1",0).attr("x2",pW).attr("y1",pW-scale(v)).attr("y2",pW-scale(v))
+     .attr("stroke","#30363d").attr("stroke-dasharray","2,4");
+    g.append("text").attr("x",scale(v)).attr("y",pW+14).attr("text-anchor","middle")
+     .attr("font-size",9).attr("fill","#6e7681").text(v);
+    g.append("text").attr("x",-8).attr("y",pW-scale(v)+3).attr("text-anchor","end")
+     .attr("font-size",9).attr("fill","#6e7681").text(v);
+  });
+
+  // Axis labels
+  g.append("text").attr("x",pW/2).attr("y",pW+30)
+   .attr("text-anchor","middle").attr("font-size",10).attr("fill","#58a6ff")
+   .text("Gemini Score");
+  g.append("text").attr("transform",`translate(-32,${pW/2}) rotate(-90)`)
+   .attr("text-anchor","middle").attr("font-size",10).attr("fill","#bc8cff")
+   .text("Claude Score");
+
+  // Tooltip
+  const tip = d3.select("body").select("#jscatter-tip").node()
+    ? d3.select("#jscatter-tip")
+    : d3.select("body").append("div")
+        .attr("id","jscatter-tip")
+        .style("position","fixed").style("pointer-events","none")
+        .style("background","#1c2128").style("border","1px solid #30363d")
+        .style("border-radius","6px").style("padding","8px 12px")
+        .style("font-size","11px").style("color","#e6edf3")
+        .style("display","none").style("z-index","9999");
+
+  // Points
+  jRows.forEach(d => {
+    const gScore = d.score_gemini ?? 0;
+    const cScore = d.score_claude ?? 0;
+    const agree  = gScore === cScore;
+    const cx = scale(gScore);
+    const cy = pW - scale(cScore);
+    const ptCol = agree ? "#3fb950" : "#f0883e";
+
+    g.append("circle").attr("cx",cx).attr("cy",cy).attr("r",7)
+     .attr("fill",ptCol).attr("opacity",0.85)
+     .attr("stroke","#0d1117").attr("stroke-width",1.5)
+     .style("cursor","pointer")
+     .on("mouseover", function(event) {
+       d3.select(this).attr("r",9).attr("opacity",1);
+       tip.style("display","block")
+         .html(`<strong>${d.test_id}</strong><br>
+                Gemini: ${gScore} &nbsp;·&nbsp; Claude: ${cScore}<br>
+                <span style="color:${agree?"#3fb950":"#f0883e"}">${agree?"✓ Agree":"△ Differ by "+(Math.abs(gScore-cScore))}</span>`);
+     })
+     .on("mousemove", function(event) {
+       tip.style("left",(event.clientX+14)+"px").style("top",(event.clientY-28)+"px");
+     })
+     .on("mouseout", function() {
+       d3.select(this).attr("r",7).attr("opacity",0.85);
+       tip.style("display","none");
+     });
+  });
+
+  // Agreement legend
+  const lx = pW + 12;
+  [[  "#3fb950","Judges agree"],[  "#f0883e","Differ"]].forEach(([c,l],i) => {
+    g.append("circle").attr("cx",lx+6).attr("cy",20+i*20).attr("r",6)
+     .attr("fill",c).attr("opacity",0.85);
+    g.append("text").attr("x",lx+16).attr("y",24+i*20)
+     .attr("font-size",10).attr("fill","#8b949e").text(l);
+  });
+
+  // Agreement summary
+  const nAgree = jRows.filter(d => d.score_gemini === d.score_claude).length;
+  g.append("text").attr("x",pW/2).attr("y",-14)
+   .attr("text-anchor","middle").attr("font-size",10.5).attr("fill","#8b949e")
+   .text(`${nAgree} / ${jRows.length} tasks in agreement (${Math.round(nAgree/jRows.length*100)}%)`);
+
+  return svg.node();
+}
+```
