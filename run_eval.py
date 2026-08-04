@@ -86,9 +86,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Available datasets:
-  eval_dataset.json            Standard v1 benchmark (text only)
-  eval_dataset_v2.json         Harder v2 benchmark (text only)
-  eval_dataset_multimodal.json OCR, document extraction, and vision QA
+  evaluations/eval_dataset.jsonl            Standard v1 benchmark (text only)
+  evaluations/eval_dataset_v2.jsonl         Harder v2 benchmark (text only)
+  evaluations/eval_dataset_multimodal.jsonl OCR, document extraction, and vision QA
 
 Available services:  grit, CIT, dream-lab, aicommons
 
@@ -98,7 +98,7 @@ Modes:
 
 Examples:
   # Normal run
-  uv run python run_eval.py --dataset eval_dataset_v2.json --services grit CIT
+  uv run python run_eval.py --dataset evaluations/eval_dataset_v2.jsonl --services grit CIT
 
   # Re-judge all gemini-scored literature_synthesis entries with claude
   uv run python run_eval.py --re-judge \\
@@ -150,8 +150,8 @@ Examples:
     # ── Shared flags ───────────────────────────────────────────────────────
     parser.add_argument(
         "--dataset",
-        type=str, default="eval_dataset.json",
-        help="Dataset file for normal evaluation (default: eval_dataset.json). Ignored in --re-judge mode.",
+        type=str, default="evaluations/eval_dataset.jsonl",
+        help="Dataset file for normal evaluation (default: evaluations/eval_dataset.jsonl). Ignored in --re-judge mode.",
     )
     parser.add_argument(
         "--services",

@@ -479,6 +479,10 @@ def _lookup_prompt_rubric(test_id: str) -> tuple[str, str]:
     context will be minimal.
     """
     dataset_files = [
+        "evaluations/sci_code_problems_dev.jsonl",
+        "evaluations/eval_dataset_multimodal.jsonl",
+        "evaluations/eval_dataset_v2.jsonl",
+        "evaluations/eval_dataset.jsonl",
         "eval_dataset_multimodal.json",
         "eval_dataset_v2.json",
         "eval_dataset.json",
@@ -486,12 +490,22 @@ def _lookup_prompt_rubric(test_id: str) -> tuple[str, str]:
     for path in dataset_files:
         try:
             with open(path) as f:
-                for task in json.load(f):
-                    if task["id"] == test_id:
-                        return (
-                            task.get("prompt", ""),
-                            task.get("judge_rubric", "Score 1-5 for accuracy and completeness."),
-                        )
+                if path.endswith(".jsonl"):
+                    for line in f:
+                        if not line.strip(): continue
+                        task = json.loads(line)
+                        if task.get("problem_id") == test_id:
+                            rubric = "Score 1-5 for accuracy and completeness."
+                            if task.get("sub_steps") and len(task["sub_steps"]) > 0:
+                                rubric = task["sub_steps"][0].get("judge_rubric", rubric)
+                            return (task.get("problem_description_main", ""), rubric)
+                else:
+                    for task in json.load(f):
+                        if task["id"] == test_id:
+                            return (
+                                task.get("prompt", ""),
+                                task.get("judge_rubric", "Score 1-5 for accuracy and completeness."),
+                            )
         except (FileNotFoundError, json.JSONDecodeError):
             continue
     logging.warning(f"Could not find prompt/rubric for test_id '{test_id}' in any dataset file.")
@@ -517,7 +531,23 @@ def run_evaluation(
     # 1. Load Dataset
     try:
         with open(dataset_path, "r") as f:
-            dataset = json.load(f)
+            if dataset_path.endswith(".jsonl"):
+                raw_dataset = [json.loads(line) for line in f if line.strip()]
+                dataset = []
+                for item in raw_dataset:
+                    flat_item = {
+                        "id": item.get("problem_id", ""),
+                        "category": item.get("problem_name", ""),
+                        "prompt": item.get("problem_description_main", "")
+                    }
+                    if item.get("sub_steps") and len(item["sub_steps"]) > 0:
+                        sub = item["sub_steps"][0]
+                        for k, v in sub.items():
+                            if k not in ["step_number", "step_description_prompt", "step_background"]:
+                                flat_item[k] = v
+                    dataset.append(flat_item)
+            else:
+                dataset = json.load(f)
         logging.info(f"Loaded {len(dataset)} task(s) from '{dataset_path}'")
     except Exception as e:
         logging.error(f"Failed to load dataset '{dataset_path}': {e}")
