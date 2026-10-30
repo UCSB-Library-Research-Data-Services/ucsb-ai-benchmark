@@ -184,7 +184,7 @@ Examples:
     args = parser.parse_args()
 
     # ── Shared validation ──────────────────────────────────────────────────
-    known_services = {"grit", "CIT", "dream-lab", "aicommons"}
+    known_services = {"grit", "CIT", "aicommons"}
     target_services = args.services or TARGET_SERVICES
     unknown = [s for s in target_services if s not in known_services]
     if unknown:
