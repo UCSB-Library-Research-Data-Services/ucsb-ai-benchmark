@@ -4,7 +4,7 @@ project:
 
 website:
   title: "UCSB AI Services Benchmark"
-  description: "Evaluating large language models across UCSB-managed AI infrastructure"
+  description: "Evaluating large language models across UCSB-managed AI infrastructure (v1 – archived)"
   favicon: "assets/favicon.ico"
   navbar:
     background: "#0d1117"
@@ -23,13 +23,14 @@ website:
         href: about.qmd
     right:
       - icon: github
-        href: https://github.com/
+        href: https://github.com/UCSB-Library-Research-Data-Services/ucsb-ai-benchmark
         aria-label: GitHub
+  include-before-body: _banner.html
   page-footer:
     background: "#0d1117"
     foreground: "#8b949e"
     center: |
-      UCSB AI Services Evaluation Suite · Built with [Quarto](https://quarto.org)
+      UCSB AI Services Evaluation Suite v1 (archived July 2025) · Built with [Quarto](https://quarto.org)
 
 format:
   html:
