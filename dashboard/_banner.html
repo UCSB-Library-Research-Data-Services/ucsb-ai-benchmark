@@ -1,0 +1,40 @@
+<div id="v1-notice-banner" style="
+  background: #1a3a1a;
+  border-bottom: 2px solid #3fb950;
+  color: #e6edf3;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.88rem;
+  padding: 0.55rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1050;
+">
+  <span style="color:#3fb950;font-weight:700;flex-shrink:0;">&#x1F4CC; Archived dashboard</span>
+  <span style="color:#8b949e;">This is the original v1 benchmark, frozen in July 2025 and no longer updated.</span>
+  <span style="color:#8b949e;">The current, actively maintained dashboard is at</span>
+  <a href="https://rds.library.ucsb.edu/ucsb-ai-benchmarks/"
+     style="color:#58a6ff;font-weight:600;white-space:nowrap;"
+     target="_blank" rel="noopener">
+    rds.library.ucsb.edu/ucsb-ai-benchmarks/
+  </a>
+  <button
+    onclick="document.getElementById('v1-notice-banner').style.display='none';sessionStorage.setItem('v1bannerDismissed','1');"
+    aria-label="Dismiss notice"
+    style="
+      background:none;border:1px solid #30363d;color:#8b949e;cursor:pointer;
+      font-size:0.78rem;padding:0.15rem 0.55rem;border-radius:4px;
+      margin-left:0.5rem;flex-shrink:0;line-height:1.4;
+    ">Dismiss</button>
+</div>
+<script>
+  (function(){
+    if(sessionStorage.getItem('v1bannerDismissed')==='1'){
+      var b=document.getElementById('v1-notice-banner');
+      if(b) b.style.display='none';
+    }
+  })();
+</script>
