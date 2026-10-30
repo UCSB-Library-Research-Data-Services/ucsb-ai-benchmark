@@ -12,6 +12,11 @@ format:
     A systematic evaluation of large language models available through UCSB-managed AI infrastructure —
     comparing performance, speed, and capability across on-premise and cloud-hosted services.
   </p>
+  <p style="font-size:0.85rem;color:#8b949e;margin-top:0.5rem;">
+    <strong style="color:#58a6ff;">Archived snapshot — v1 (July 2025).</strong>
+    The current, actively maintained benchmark is at
+    <a href="https://rds.library.ucsb.edu/ucsb-ai-benchmarks/" style="color:#58a6ff;">rds.library.ucsb.edu/ucsb-ai-benchmarks/</a>.
+  </p>
 </div>
 ```
 

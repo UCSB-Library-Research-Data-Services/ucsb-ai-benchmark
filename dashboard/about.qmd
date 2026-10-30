@@ -8,6 +8,15 @@ format:
 ---
 
 ```{=html}
+<div style="background:#1a2a3a;border:1px solid #388bfd;border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:0.9rem;color:#e6edf3;">
+  <strong style="color:#58a6ff;">&#x1F4E6; Archived snapshot — v1</strong><br>
+  This dashboard represents the first exercise in benchmarking UCSB AI services, capturing evaluations run through July 2025. It is no longer updated.
+  The actively maintained benchmark suite is available at
+  <a href="https://rds.library.ucsb.edu/ucsb-ai-benchmarks/" style="color:#58a6ff;font-weight:600;">rds.library.ucsb.edu/ucsb-ai-benchmarks/</a>.
+</div>
+```
+
+```{=html}
 <div class="hero-section" style="padding:2.5rem 0 1.5rem">
   <h1 style="font-size:1.9rem">About & Methods</h1>
   <p class="lead">
